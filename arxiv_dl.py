@@ -3,6 +3,9 @@ import pandas as pd
 import pathlib
 from datetime import datetime
 
+import services
+
+from time import sleep
 
 def get_arxiv_results(search_query):
     search = arxiv.Search(
@@ -43,7 +46,6 @@ def get_arxiv_results(search_query):
 
 def save_arxiv_results(path, results):
     # pathlib.Path('./my/directory').mkdir(parents=True, exist_ok=True)
-
-
     results.to_csv(f'./{path}/arxiv.csv', sep=',', index=False,
                    header=True)
+

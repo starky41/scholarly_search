@@ -59,13 +59,13 @@ def save_springer_results(path, results):
 
 def find_keywords(query, results, path):
     keywords = results['keyword'].apply(pd.Series).stack().reset_index(drop=True)
-    keywords = list(keywords.value_counts().index[:10])
+    keywords = list(keywords.value_counts().index[:30])
 
     keywords = [keyword.rstrip() for keyword in keywords]
 
     while '' in keywords:
         keywords.remove('')
-
+    keywords = keywords[:10]
     query = query.replace("%22", "")
     query.replace("+", "_")
     with open(f'./{path}/keywords.txt', 'w') as f:
