@@ -16,10 +16,10 @@ def main():
 
     print('\n')
     for keyword in keywords:
-        keyword_query = keyword
-        path = services.create_folder(f'keywords/{keyword_query}')
+
+        path = services.create_folder(f'keywords/{keyword}')
+        # print(f'Downloading data on {keyword}...')
         results = arxiv_dl.get_arxiv_results(keyword, path)
-        print(f'Downloading data on {keyword}...')
         arxiv_dl.save_arxiv_results(path, results)
         sleep(3)
 

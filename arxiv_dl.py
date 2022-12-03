@@ -6,7 +6,7 @@ import re
 def get_arxiv_results(search_query, path):
     search = arxiv.Search(
         query=search_query,
-        max_results=10,  # up to 300,000
+        max_results=5,  # up to 300,000
         sort_by=arxiv.SortCriterion.Relevance,
     )
 
@@ -39,10 +39,9 @@ def get_arxiv_results(search_query, path):
     df = pd.DataFrame.from_dict(data)
 
     def get_pdf(path):
-
+        print(f'Downloading articles on {search_query}...')
         for result in search.results():
-            result.title = re.sub(r'\W+', ' ', result.title)
-            result.download_pdf(dirpath=f'./{path}/', filename=f'{result.title}.pdf')
+            result.download_pdf(dirpath=f'./{path}/', filename=re.sub(r'\W+', ' ', result.title).replace(' ', '_') + ".pdf")
             print(f'Downloaded article: {result.title} ({result.pdf_url})')
 
     get_pdf(path)
