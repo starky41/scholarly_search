@@ -13,6 +13,7 @@ with open("apikey.txt", "r") as apikey_file:
 
 
 def get_springer_results(query, results_to_get):
+
     def create_query(query):
         query = '%22' + f'{query}'.replace(' ', '+') + '%22'
         return query
@@ -60,7 +61,6 @@ def save_springer_results(path, results):
 def find_keywords(query, results, path):
     keywords = results['keyword'].apply(pd.Series).stack().reset_index(drop=True)
     keywords = list(keywords.value_counts().index[:30])
-
     keywords = [keyword.rstrip() for keyword in keywords]
 
     while '' in keywords:

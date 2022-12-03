@@ -1,16 +1,12 @@
 import arxiv
 import pandas as pd
-import pathlib
-from datetime import datetime
+import re
 
-import services
 
-from time import sleep
-
-def get_arxiv_results(search_query):
+def get_arxiv_results(search_query, path):
     search = arxiv.Search(
         query=search_query,
-        max_results=100,  # up to 300,000
+        max_results=10,  # up to 300,000
         sort_by=arxiv.SortCriterion.Relevance,
     )
 
@@ -41,11 +37,18 @@ def get_arxiv_results(search_query):
         data['pdf_url'].append(result.pdf_url)
 
     df = pd.DataFrame.from_dict(data)
+
+    def get_pdf(path):
+
+        for result in search.results():
+            result.title = re.sub(r'\W+', ' ', result.title)
+            result.download_pdf(dirpath=f'./{path}/', filename=f'{result.title}.pdf')
+            print(f'Downloaded article: {result.title} ({result.pdf_url})')
+
+    get_pdf(path)
     return df
 
 
 def save_arxiv_results(path, results):
-    # pathlib.Path('./my/directory').mkdir(parents=True, exist_ok=True)
     results.to_csv(f'./{path}/arxiv.csv', sep=',', index=False,
                    header=True)
-
