@@ -18,7 +18,7 @@ def main():
     for keyword in keywords:
 
         path = services.create_folder(f'keywords/{keyword}')
-        # print(f'Downloading data on {keyword}...')
+        print(f'Downloading data on {keyword}...')
         results = arxiv_dl.get_arxiv_results(keyword, path)
         arxiv_dl.save_arxiv_results(path, results)
         sleep(3)
