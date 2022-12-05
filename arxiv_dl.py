@@ -3,10 +3,10 @@ import pandas as pd
 import re
 
 
-def get_arxiv_results(search_query, path):
+def get_arxiv_results(search_query, path, max_results):
     search = arxiv.Search(
         query=search_query,
-        max_results=5,  # up to 300,000
+        max_results=max_results,  # up to 300,000
         sort_by=arxiv.SortCriterion.Relevance,
     )
 
