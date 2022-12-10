@@ -48,17 +48,19 @@ def get_springer_results(query, results_to_get):
 
     create_query(query)
     results = springer_find(results_to_get, query)
-    results = pd.DataFrame.from_dict(results)
+
 
     return results
 
 
-def save_springer_results(path, results):
-    results.to_csv(f'./{path}/springer.csv', sep=',', index=False,
-                   header=True)
+# def save_springer_results(path, results):
+#     results = pd.DataFrame.from_dict(results)
+#     results.to_csv(f'./{path}/springer.csv', sep=',', index=False,
+#                    header=True)
 
 
 def find_keywords(query, results, path):
+    results = pd.DataFrame.from_dict(results)
     keywords = results['keyword'].apply(pd.Series).stack().reset_index(drop=True)
     keywords = list(keywords.value_counts().index[:30])
     keywords = [keyword.rstrip() for keyword in keywords]
