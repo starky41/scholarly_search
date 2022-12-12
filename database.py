@@ -1,17 +1,26 @@
 import datetime
 from pymongo import MongoClient
-import springer_dl
-import arxiv_dl
+import gridfs
 
-cluster = 'mongodb+srv://starky:xe97u5wDMS2kcZry@cluster0.jfbfflp.mongodb.net/scholarly_search_db?retryWrites=true&w=majority'
+def mongo_conn():
+    try:
+        cluster = 'mongodb+srv://starky:xe97u5wDMS2kcZry@cluster0.jfbfflp.mongodb.net/scholarly_search_db?retryWrites=true&w=majority'
+        client = MongoClient(cluster)
+        print(client.list_database_names())
+        return client.scholarly_search_db
+    except Exception as e:
+        print('Error in MongoDB connection', e)
 
-client = MongoClient(cluster)
 
-print(client.list_database_names())
-
-db = client.scholarly_search_db
-
+db = mongo_conn()
 print(db.list_collection_names())
+
+
+def upload_pdf(filename):
+    with open(f'./data/{filename}', 'rb') as f:
+        fs = gridfs.GridFS(db)
+        fs.put(f, filename=filename)
+        print('upload completed')
 
 
 def add_record(name, springer_data, arxiv_data, kw_data):
@@ -21,8 +30,7 @@ def add_record(name, springer_data, arxiv_data, kw_data):
                  'data': {'query': {'springer': springer_data,
                                     'arxiv':
                                         {
-                                            'metadata': arxiv_data,
-                                            'articles': [{'list of pdfs': 'list_of_pdfs'}]
+                                            'metadata': arxiv_data
                                         }
                                     },
 
@@ -30,33 +38,10 @@ def add_record(name, springer_data, arxiv_data, kw_data):
                           }
                  }
 
-
     result = queries.insert_one(db_record)
+
     print(result)
     return result
 
 
 queries = db.metadata
-
-# def db_save(query, springer_results, arxiv_results, keywords):
-#
-#     search_results = {"name": query,
-#              "datetime": datetime.datetime.utcnow(),
-#              'data': {'main_term': {'springer': springer_results,
-#                                     'arxiv':
-#                                         {
-#                                             'metadata': arxiv_results,
-#                                             'articles': [{'list of pdfs': 'list_of_pdfs'}]
-#                                         }
-#                                     },
-#
-#                       'keywords': {'keywords': keywords,
-#                                    '0': {'keyword': 'machine learning',
-#                                          'arxiv': {
-#                                              'metadata': './arxiv.csv',
-#                                              'articles': [{'list_of_pdfs': 'list_of_pdfs'}]
-#                                          }
-#                                          }
-#                                    }
-#                       }
-#                       }

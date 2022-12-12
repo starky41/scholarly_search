@@ -1,6 +1,7 @@
 import arxiv
-import pandas as pd
 import re
+
+import database
 
 
 def get_arxiv_results(search_query, path, max_results):
@@ -13,6 +14,12 @@ def get_arxiv_results(search_query, path, max_results):
 
     results = []
     for idx, result in enumerate(search.results()):
+        file_n = re.sub(r'\W+', ' ', result.title).replace(' ', '_') + ".pdf"
+
+        result.download_pdf(dirpath=f'./data/',
+                            filename=file_n)
+        print(f'Downloaded article: {result.title} ({result.pdf_url})')
+
         data = {
                 'id': result.entry_id,
                 'updated': result.updated,
@@ -23,50 +30,24 @@ def get_arxiv_results(search_query, path, max_results):
                 'primary_category': result.primary_category,
                 'categories': result.categories,
                 'links': str(result.links),
-                'pdf_url': str(result.pdf_url)
+                'pdf_url': str(result.pdf_url),
+
                 }
 
-        results.append(data)
 
+        database.upload_pdf(file_n)
+        results.append(data)
     print(results)
 
-    # data = {
-    #     "id": [],
-    #     "updated": [],
-    #     "published": [],
-    #     "title": [],
-    #     "authors": [],
-    #     "summary": [],
-    #     'primary_category': [],
-    #     'categories': [],
-    #     'links': [],
-    #     'pdf_url': []
+    # def get_pdf(path):
     #
-    # }
-    #
-    # for result in search.results():
-    #     data['id'].append(str(result.entry_id))
-    #     data['updated'].append(str(result.updated))
-    #     data['published'].append(str(result.published))
-    #     data['title'].append(str(result.title))
-    #     data['authors'].append(str(result.authors))
-    #     data['summary'].append(str(result.summary))
-    #     data['primary_category'].append(str(result.primary_category))
-    #     data['categories'].append(str(result.categories))
-    #     data['links'].append(str(result.links))
-    #     data['pdf_url'].append(str(result.pdf_url))
-
-    # df = pd.DataFrame.from_dict(data)
-
-    def get_pdf(path):
-        print(f'Downloading articles on {search_query}...')
-        for result in search.results():
-            result.download_pdf(dirpath=f'./{path}/',
-                                filename=re.sub(r'\W+', ' ', result.title).replace(' ', '_') + ".pdf")
-            print(f'Downloaded article: {result.title} ({result.pdf_url})')
+    #     print(f'Downloading articles on {search_query}...')
+    #     for result in search.results():
+    #         result.download_pdf(dirpath=f'./data/',
+    #                             filename=file_n)
+    #         print(f'Downloaded article: {result.title} ({result.pdf_url})')
 
     # get_pdf(path)
-    # return df
     return results
 
 

@@ -59,7 +59,7 @@ def get_springer_results(query, results_to_get):
 #                    header=True)
 
 
-def find_keywords(query, results, path):
+def find_keywords(query, results):
     results = pd.DataFrame.from_dict(results)
     keywords = results['keyword'].apply(pd.Series).stack().reset_index(drop=True)
     keywords = list(keywords.value_counts().index[:30])
@@ -70,6 +70,6 @@ def find_keywords(query, results, path):
     keywords = keywords[:10]
     query = query.replace("%22", "")
     query.replace("+", "_")
-    with open(f'./{path}/keywords.txt', 'w') as f:
-        f.write(str(keywords))
+    # with open(f'./{path}/keywords.txt', 'w') as f:
+    #     f.write(str(keywords))
     return keywords
