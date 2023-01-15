@@ -2,6 +2,7 @@ import datetime
 from pymongo import MongoClient
 import gridfs
 
+
 def mongo_conn():
     try:
         cluster = 'mongodb+srv://starky:xe97u5wDMS2kcZry@cluster0.jfbfflp.mongodb.net/scholarly_search_db?retryWrites=true&w=majority'
