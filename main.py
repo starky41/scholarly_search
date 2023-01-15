@@ -1,9 +1,11 @@
 import arxiv_dl
 import springer_dl
 import database
+from pathlib import Path
 
 
 def main():
+    Path('./data').mkdir(parents=True, exist_ok=True)
     query = str(input('Enter your query >>> '))
     springer_results = springer_dl.get_springer_results(query, results_to_get=200)
     keywords = springer_dl.find_keywords(query, springer_results, max_kw=2)
