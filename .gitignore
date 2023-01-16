@@ -139,5 +139,5 @@ dmypy.json
 cython_debug/
 
 data/
-apikey.txt
+constants/apikey.txt
 
