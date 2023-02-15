@@ -9,9 +9,12 @@ import pandas as pd
 START = 1
 MAX_RESULTS = 100
 API_KEY = ""
-with open("constants/apikey.txt", "r") as apikey_file:
-    API_KEY = apikey_file.readlines()[0].strip()
-
+try:
+    with open("constants/apikey.txt", "r") as apikey_file:
+        API_KEY = apikey_file.readlines()[0].strip()
+except FileNotFoundError:
+    with open("../constants/apikey.txt", "r") as apikey_file:
+        API_KEY = apikey_file.readlines()[0].strip()
 
 def get_springer_results(query, results_to_get):
 

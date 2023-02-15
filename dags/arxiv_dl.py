@@ -20,17 +20,19 @@ def get_arxiv_results(search_query, max_results):
         result.download_pdf(dirpath=f'./data/',
                             filename=file_n)
         print(f'Downloaded article: {result.title} ({result.pdf_url})')
-
         data = {
             'id': result.entry_id,
             'updated': result.updated,
             'published': result.published,
             'title': result.title,
-            'authors': str(result.authors),
+            'authors': [result.authors[idx].name],
             'summary': result.summary,
             'primary_category': result.primary_category,
             'categories': result.categories,
-            'links': str(result.links),
+            'links': [{'href': result.links[idx].href,
+                       'title':result.links[idx].title,
+                       'rel': result.links[idx].rel,
+                       'content_type': result.links[idx].content_type}],
             'pdf_url': str(result.pdf_url),
 
         }
@@ -51,13 +53,13 @@ def get_arxiv_results(search_query, max_results):
     return results
 
 
-def get_kw_results(keywords):
+def get_kw_results(keywords, num_results=3):
     kw_results = []
     for keyword in keywords:
         try:
             # path = services.create_folder(f'keywords/{keyword}')
             print(f'\nDownloading data on {keyword}...')
-            arxiv_results = get_arxiv_results(keyword, max_results=1)
+            arxiv_results = get_arxiv_results(keyword, max_results=num_results)
             kw_results.append({'keyword': f'{keyword}',
                                'arxiv': {
                                    'metadata': arxiv_results
