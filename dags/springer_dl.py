@@ -4,6 +4,7 @@ import json
 from time import sleep
 import pandas as pd
 
+import os
 
 # Constants
 START = 1
@@ -32,7 +33,7 @@ def get_springer_results(query, results_to_get):
                     f'q={query}&'
                     f's={1 + i * 100}&'
                     f'p={MAX_RESULTS}&'
-                    f'api_key={API_KEY}',
+                    f'api_key={API_KEY}&',
                     timeout=20)
 
                 result = json.loads(response.text)
@@ -52,7 +53,7 @@ def get_springer_results(query, results_to_get):
 
     create_query(query)
     results = springer_find(results_to_get, query)
-
+    print(results[0])
 
     return results
 
@@ -77,3 +78,22 @@ def find_keywords(query, results, max_kw=10):
     # with open(f'./{path}/keywords.txt', 'w') as f:
     #     f.write(str(keywords))
     return keywords
+
+
+
+import requests
+
+def download_articles(articles):
+    for article in articles:
+        if article['openaccess'] == 'true':
+            for url in article['url']:
+                if url['format'] == 'pdf':
+                    response = requests.get(url['value'])
+                    folder_name = './springer_articles'
+                    if not os.path.exists(folder_name):
+                        os.mkdir(folder_name)
+                    file_name = os.path.join(folder_name, article['title'] + '.pdf')
+                    with open(file_name, 'wb') as f:
+                        f.write(response.content)
+                    print(f"Downloaded: {article['title']} to {folder_name}.")
+                    break
