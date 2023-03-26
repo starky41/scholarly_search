@@ -5,15 +5,14 @@ import database
 import springer_dl
 import visualization
 
+
 params = {
     'query': 'Natural language processing',
     'springer_get': 200,
     'num_kw': 3,
     'arxiv_metadata_download_main': 200,
-    # 'arxiv_get_main': 4,
     'arxiv_pdf_download_main': 1,
-    # 'arxiv_get_kw': 2
-    'arxiv_metadata_download_kw':10 ,
+    'arxiv_metadata_download_kw': 10 ,
     'arxiv_pdf_download_kw': 2,
 }
 
@@ -23,7 +22,7 @@ def main():
     query = params['query']
     springer_results = springer_dl.get_springer_results(query, results_to_get=params['springer_get'])
     visualization.create_wordcloud(springer_results)
-    springer_dl.download_articles(springer_results)
+    springer_dl.download_articles(springer_results, num_articles=5)
     keywords = springer_dl.find_keywords(query, springer_results, max_kw=params['num_kw'])
     print(keywords)
     arxiv_results = arxiv_dl.get_arxiv_results(query,

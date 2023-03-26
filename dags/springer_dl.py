@@ -3,22 +3,17 @@ import requests
 import json
 from time import sleep
 import pandas as pd
-
 import os
 
 # Constants
 START = 1
 MAX_RESULTS = 100
-API_KEY = ""
-try:
-    with open("constants/apikey.txt", "r") as apikey_file:
-        API_KEY = apikey_file.readlines()[0].strip()
-except FileNotFoundError:
-    with open("../constants/apikey.txt", "r") as apikey_file:
-        API_KEY = apikey_file.readlines()[0].strip()
+
+
+with open("constants/apikey.txt", "r") as apikey_file:
+    API_KEY = apikey_file.readlines()[0].strip()
 
 def get_springer_results(query, results_to_get):
-
     def create_query(query):
         query = '%22' + f'{query}'.replace(' ', '+') + '%22'
         return query
@@ -58,12 +53,6 @@ def get_springer_results(query, results_to_get):
     return results
 
 
-# def save_springer_results(path, results):
-#     results = pd.DataFrame.from_dict(results)
-#     results.to_csv(f'./{path}/springer.csv', sep=',', index=False,
-#                    header=True)
-
-
 def find_keywords(query, results, max_kw=10):
     results = pd.DataFrame.from_dict(results)
     keywords = results['keyword'].apply(pd.Series).stack().reset_index(drop=True)
@@ -75,15 +64,14 @@ def find_keywords(query, results, max_kw=10):
     keywords = keywords[:max_kw]
     query = query.replace("%22", "")
     query.replace("+", "_")
-    # with open(f'./{path}/keywords.txt', 'w') as f:
-    #     f.write(str(keywords))
     return keywords
 
 
 
-import requests
 
-def download_articles(articles):
+
+def download_articles(articles, num_articles):
+    count = 0
     for article in articles:
         if article['openaccess'] == 'true':
             for url in article['url']:
@@ -96,4 +84,7 @@ def download_articles(articles):
                     with open(file_name, 'wb') as f:
                         f.write(response.content)
                     print(f"Downloaded: {article['title']} to {folder_name}.")
+                    count += 1
+                    if count == num_articles:
+                        return
                     break

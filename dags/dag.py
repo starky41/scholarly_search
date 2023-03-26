@@ -5,6 +5,9 @@ from airflow.operators.python import PythonOperator
 import springer_dl
 import arxiv_dl
 import database
+import arxiv
+import pymongo
+
 from pathlib import Path
 default_args = {
     'owner': 'starky',

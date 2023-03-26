@@ -1,14 +1,8 @@
-import arxiv
-import re
 from time import sleep
-
 import database
-
-
 import arxiv
 import re
 
-import itertools
 
 
 
@@ -25,8 +19,8 @@ def get_arxiv_results(search_query, max_results, num_pdf_downloads):
     for idx, result in enumerate(search.results()):
         if len(results) >= max_results:
             break
-
-        file_n = re.sub(r'\W+', ' ', result.title).replace(' ', '_') + ".pdf"
+        file_n = re.sub(r'\W+', ' ', result.title) + ".pdf"
+        # file_n = re.sub(r'\W+', ' ', result.title).replace(' ', '_') + ".pdf"
         if pdf_downloads < num_pdf_downloads:
             result.download_pdf(dirpath=f'./data/',
                                 filename=file_n)
