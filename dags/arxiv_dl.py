@@ -2,10 +2,12 @@ from time import sleep
 import database
 import arxiv
 import re
+import json
+from datetime import datetime
 
+from pathlib import Path
 
-
-
+RESULTS = './output/metadata/arxiv.json'
 def get_arxiv_results(search_query, max_results, num_pdf_downloads):
     search = arxiv.Search(
         query=search_query,
@@ -21,11 +23,12 @@ def get_arxiv_results(search_query, max_results, num_pdf_downloads):
             break
         file_n = re.sub(r'\W+', ' ', result.title) + ".pdf"
         # file_n = re.sub(r'\W+', ' ', result.title).replace(' ', '_') + ".pdf"
+        Path('./output/arxiv_papers/').mkdir(parents=True, exist_ok=True)
         if pdf_downloads < num_pdf_downloads:
-            result.download_pdf(dirpath=f'./data/',
+            result.download_pdf(dirpath=f'./output/arxiv_papers/',
                                 filename=file_n)
             print(f'Downloaded article: {result.title} ({result.pdf_url})')
-            database.upload_pdf(file_n)
+            database.upload_pdf(f'/arxiv_papers/{file_n}')
             pdf_downloads += 1
 
         data = {
@@ -45,7 +48,20 @@ def get_arxiv_results(search_query, max_results, num_pdf_downloads):
         print(f'{idx+1}/{max_results}')
         print(data)
         results.append(data)
+
+    # Save json
+    class DateTimeEncoder(json.JSONEncoder):
+        def default(self, obj):
+            if isinstance(obj, datetime):
+                return obj.isoformat()
+            return json.JSONEncoder.default(self, obj)
+
+    # Save json
+    with open(RESULTS, 'w') as f:
+        json.dump(results, f, cls=DateTimeEncoder)
+
     return results
+
 
 
 def get_kw_results(keywords, num_metadata, num_pdf_downloads, main_query):

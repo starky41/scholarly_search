@@ -1,5 +1,4 @@
 
-import pandas as pd
 import matplotlib.pyplot as plt
 from wordcloud import WordCloud
 
@@ -20,18 +19,6 @@ def create_wordcloud(json):
     plt.axis('off')
     plt.title('Most Frequent Keywords')
     plt.show()
-
-# def plot_articles_by_year(results):
-#     years = [datetime.datetime.strptime(str(result['published']), '%Y-%m-%d %H:%M:%S%z').year for result in results]
-#     plt.hist(years, bins=range(min(years), max(years)+2), align='left', rwidth=0.8)
-#     plt.xticks(range(min(years), max(years)+1, 2), rotation=45, ha='right')
-#     plt.xlabel('Year')
-#     plt.ylabel('Number of Articles')
-#     plt.title('Distribution of Articles by Year')
-#     plt.show()
-
-import datetime
-import matplotlib.pyplot as plt
 
 
 def plot_articles_by_year(results, query_name):

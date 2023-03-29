@@ -5,6 +5,8 @@ from time import sleep
 import pandas as pd
 import os
 
+import database
+
 # Constants
 START = 1
 MAX_RESULTS = 100
@@ -48,7 +50,10 @@ def get_springer_results(query, results_to_get):
 
     create_query(query)
     results = springer_find(results_to_get, query)
-    print(results[0])
+    # save json
+    with open('./output/metadata/springer.json', 'w') as f:
+        json.dump(results, f)
+
 
     return results
 
@@ -77,13 +82,14 @@ def download_articles(articles, num_articles):
             for url in article['url']:
                 if url['format'] == 'pdf':
                     response = requests.get(url['value'])
-                    folder_name = './springer_articles'
+                    folder_name = './output/springer_papers'
                     if not os.path.exists(folder_name):
                         os.mkdir(folder_name)
                     file_name = os.path.join(folder_name, article['title'] + '.pdf')
                     with open(file_name, 'wb') as f:
                         f.write(response.content)
                     print(f"Downloaded: {article['title']} to {folder_name}.")
+                    database.upload_pdf(f"springer_papers/{article['title']}.pdf")
                     count += 1
                     if count == num_articles:
                         return

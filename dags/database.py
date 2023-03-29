@@ -20,13 +20,13 @@ print(f'Collections: {db.list_collection_names()}')
 
 
 def upload_pdf(filename):
-    with open(f'./data/{filename}', 'rb') as f:
+    with open(f'./output/{filename}', 'rb') as f:
         fs = gridfs.GridFS(db)
         fs.put(f, filename=filename)
         print('Upload complete')
 
 
-def add_record(name, springer_data, arxiv_data, kw_data):
+def add_record(name, springer_data, arxiv_data, crossref_data, kw_data):
     result = queries.delete_many({})
     db_record = {"name": name,
                  "datetime": datetime.datetime.utcnow(),
@@ -34,7 +34,8 @@ def add_record(name, springer_data, arxiv_data, kw_data):
                                     'arxiv':
                                         {
                                             'metadata': arxiv_data
-                                        }
+                                        },
+                                    'crossref': crossref_data,
                                     },
 
                           'keywords': kw_data
