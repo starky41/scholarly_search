@@ -49,7 +49,9 @@ def get_springer_results(query, results_to_get):
         return flattened_list
 
     create_query(query)
+
     results = springer_find(results_to_get, query)
+    print(results[0])
     # save json
     with open('./output/metadata/springer.json', 'w') as f:
         json.dump(results, f)

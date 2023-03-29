@@ -12,18 +12,18 @@ metadata_path = './output/metadata'
 params = {
     'query': 'Natural language processing',
     'springer': {
-        'max_metadata': 200,
-        'max_pdfs': 2,
-        'num_kw': 2,
+        'max_metadata': 100,
+        'max_pdfs': 1,
+        'num_kw': 0,
         'path': metadata_path + '/springer.json',
     },
     'arxiv': {
-        'main': {'max_metadata': 100, 'max_pdfs': 2},
-        'kw': {'max_metadata': 100, 'max_pdfs': 2},
+        'main': {'max_metadata': 100, 'max_pdfs': 0},
+        'kw': {'max_metadata': 100, 'max_pdfs': 0},
         'path': metadata_path + '/arxiv.json',
     },
     'crossref': {
-        'max_metadata': 100,  # limited by 1000.
+        'max_metadata': 50,  # limited by 1000.
         'top_n': 10,
         'path': metadata_path + '/crossref.json',
         'top_path': metadata_path + '/crossref_top.json',
@@ -39,6 +39,8 @@ def main():
     springer_results = springer_dl.get_springer_results(query,
                                                         results_to_get=params['springer']['max_metadata'])
     visualization.create_wordcloud(springer_results)
+    visualization.visualize_openaccess_ratio(springer_results)
+    visualization.plot_subjects(springer_results, 10, query)
 
     springer_dl.download_articles(springer_results,
                                   params['springer']['max_pdfs'])
@@ -61,6 +63,7 @@ def main():
     crossref_results = crossref_dl.get_crossref_results(params['query'], max_results=params['crossref']['max_metadata'])
     crossref_dl.get_top_articles(input_file=params['crossref']['path'], top_n=params['crossref']['top_n'],
                                  output_file=params['crossref']['top_path'])
+    visualization.scatter_plot_citations(crossref_results)
 
     database.add_record(name=query,
                         springer_data=springer_results,
