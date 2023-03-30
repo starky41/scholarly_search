@@ -65,6 +65,7 @@ def main():
                                  output_file=params['crossref']['top_path'])
     visualization.scatter_plot_citations(crossref_results)
     visualization.plot_publishers(crossref_results, query_name=query)
+    visualization.plot_journals(crossref_results, query_name=query)
     database.add_record(name=query,
                         springer_data=springer_results,
                         arxiv_data=arxiv_results,

@@ -140,3 +140,33 @@ def plot_publishers(data, query_name, n=10):
              transform=plt.gca().transAxes, fontsize=10, verticalalignment='top',
              bbox=dict(facecolor='white', alpha=0.5))
     plt.show()
+
+def plot_journals(data, query_name, n=10):
+    selection_size = len(data)
+    journals = []
+    for d in data:
+        journals.append(d['journal_name'])
+    journal_counts = Counter(journals)
+    top_journals = journal_counts.most_common(n)[::-1] # Reverse order
+    labels, values = zip(*top_journals)
+
+    # Wrap the publisher labels
+    max_label_len = max([len(label) for label in labels])
+    wrapped_labels = [('\n'.join(wrap(label, width=max_label_len // 2))) for label in labels]
+
+    fig, ax = plt.subplots(figsize=(8, 6))
+    ax.barh(wrapped_labels, values)
+    ax.tick_params(axis='both', which='major', labelsize=8)
+    ax.set_xlabel('Number of publications')
+    ax.set_title(f'Top {n} Journals')
+
+    # Adjust font size and figure size to prevent overlap
+    plt.rcParams.update({'font.size': 10})
+    plt.tight_layout()
+
+    # Display additional information on the plot
+    plt.text(0.45, 0.125,
+             f"Query: {query_name}\nSelection size: {selection_size}\nCreated on: {datetime.datetime.now().strftime('%Y-%m-%d %H:%M:%S')}",
+             transform=plt.gca().transAxes, fontsize=10, verticalalignment='top',
+             bbox=dict(facecolor='white', alpha=0.5))
+    plt.show()
