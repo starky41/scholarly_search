@@ -40,8 +40,21 @@ def get_crossref_results(query, max_results):
         title = item.get('title', 'N/A')
 
         # get the authors
-        authors = ", ".join([f"{author.get('family', 'N/A')}, {author.get('given', 'N/A')}" for author in
+        author = ", ".join([f"{author.get('family', 'N/A')}, {author.get('given', 'N/A')}" for author in
                              item.get('author', [{'family': 'N/A', 'given': 'N/A'}])])
+
+        # get the authors
+        authors = item.get('author', [{'family': 'N/A', 'given': 'N/A', 'sequence': 'N/A', 'affiliation': []}])
+        author_list = []
+        for author in authors:
+            author_dict = {
+                'given': author.get('given', 'N/A'),
+                'family': author.get('family', 'N/A'),
+                'sequence': author.get('sequence', 'N/A'),
+                'affiliation': author.get('affiliation', [])
+            }
+            author_list.append(author_dict)
+        authors_info = author_list
 
         # get the published date
         published_date = item.get('published-print', {}).get('date-parts', [[None]])[0][0] or \
@@ -65,6 +78,9 @@ def get_crossref_results(query, max_results):
         # get the DOI
         doi = item.get('DOI', 'N/A')
 
+        # get the ISSN
+        issn = item.get('ISSN', 'N/A')
+
         # get the URL
         url = item.get('URL', 'N/A')
 
@@ -78,17 +94,22 @@ def get_crossref_results(query, max_results):
         funders = ", ".join([f"{funder.get('name', 'N/A')}: {funder.get('award', 'N/A')}" for funder in
                              item.get('funder', [])])
 
+        publisher = item.get('publisher', 'N/A')
+
         # create a dictionary to store the results
         result = {
             "title": title,
-            "authors": authors,
+            "author": author,
+            "authors": authors_info,
             "published_date": published_date,
+            "publisher": publisher,
             "journal_name": journal_name,
             "volume": volume,
             "issue": issue,
             "page": page,
             "citation_count": citation_count,
             "doi": doi,
+            "issn": issn,
             "url": url,
             "abstract": abstract,
             "license_url": license_url,
@@ -110,10 +131,7 @@ def get_crossref_results(query, max_results):
     return results
 
 
-
-
-
-
+get_crossref_results('natural language processing', 10)
 
 
 def get_top_articles(input_file, top_n, output_file):

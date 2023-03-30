@@ -23,7 +23,7 @@ params = {
         'path': metadata_path + '/arxiv.json',
     },
     'crossref': {
-        'max_metadata': 50,  # limited by 1000.
+        'max_metadata': 100,  # limited by 1000.
         'top_n': 10,
         'path': metadata_path + '/crossref.json',
         'top_path': metadata_path + '/crossref_top.json',
@@ -64,7 +64,7 @@ def main():
     crossref_dl.get_top_articles(input_file=params['crossref']['path'], top_n=params['crossref']['top_n'],
                                  output_file=params['crossref']['top_path'])
     visualization.scatter_plot_citations(crossref_results)
-
+    visualization.plot_publishers(crossref_results, query_name=query)
     database.add_record(name=query,
                         springer_data=springer_results,
                         arxiv_data=arxiv_results,

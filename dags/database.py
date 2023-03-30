@@ -9,13 +9,13 @@ def mongo_conn():
         client = MongoClient(cluster)
         print('Successfully connected to MongoDB!')
         print(f'Databases: {client.list_database_names()}')
+        print(f'Collections: {client.scholarly_search_db.list_collection_names()}')
         return client.scholarly_search_db
     except Exception as e:
         print('Error in MongoDB connection', e)
 
 
 db = mongo_conn()
-print(f'Collections: {db.list_collection_names()}')
 
 
 

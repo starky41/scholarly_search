@@ -77,6 +77,7 @@ def scatter_plot_citations(data):
             citations.append(citation)
 
     plt.scatter(years, citations)
+    plt.title("Publication Year vs. Citation count")
     plt.xlabel('Publication Year')
     plt.ylabel('Citation Count')
     plt.show()
@@ -98,11 +99,42 @@ def plot_subjects(data, n, query_name):
     fig, ax = plt.subplots(figsize=(8, 6))
     ax.barh(wrapped_labels, values)
     ax.set_xlabel('Number of chapters')
-    ax.set_title(f'Top {n} Subjects in Book Chapters')
+    ax.set_title(f'Top {n} Subjects in papers')
 
     # Adjust font size and figure size to prevent overlap
     plt.rcParams.update({'font.size': 12})
     plt.tight_layout()
+    plt.text(0.55, 0.125,
+             f"Query: {query_name}\nSelection size: {selection_size}\nCreated on: {datetime.datetime.now().strftime('%Y-%m-%d %H:%M:%S')}",
+             transform=plt.gca().transAxes, fontsize=10, verticalalignment='top',
+             bbox=dict(facecolor='white', alpha=0.5))
+    plt.show()
+
+
+def plot_publishers(data, query_name, n=10):
+    selection_size = len(data)
+    publishers = []
+    for d in data:
+        publishers.append(d['publisher'])
+    publisher_counts = Counter(publishers)
+    top_publishers = publisher_counts.most_common(n)[::-1] # Reverse order
+    labels, values = zip(*top_publishers)
+
+    # Wrap the publisher labels
+    max_label_len = max([len(label) for label in labels])
+    wrapped_labels = [('\n'.join(wrap(label, width=max_label_len // 2))) for label in labels]
+
+    fig, ax = plt.subplots(figsize=(8, 6))
+    ax.barh(wrapped_labels, values)
+    ax.tick_params(axis='both', which='major', labelsize=8)
+    ax.set_xlabel('Number of publications')
+    ax.set_title(f'Top {n} Publishers')
+
+    # Adjust font size and figure size to prevent overlap
+    plt.rcParams.update({'font.size': 10})
+    plt.tight_layout()
+
+    # Display additional information on the plot
     plt.text(0.55, 0.125,
              f"Query: {query_name}\nSelection size: {selection_size}\nCreated on: {datetime.datetime.now().strftime('%Y-%m-%d %H:%M:%S')}",
              transform=plt.gca().transAxes, fontsize=10, verticalalignment='top',
