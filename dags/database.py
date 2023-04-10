@@ -19,7 +19,7 @@ db = mongo_conn()
 
 
 
-def upload_pdf(filename):
+def upload_file(filename):
     with open(f'./output/{filename}', 'rb') as f:
         fs = gridfs.GridFS(db)
         fs.put(f, filename=filename)

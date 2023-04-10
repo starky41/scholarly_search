@@ -28,7 +28,7 @@ def get_arxiv_results(search_query, max_results, num_pdf_downloads):
             result.download_pdf(dirpath=f'./output/arxiv_papers/',
                                 filename=file_n)
             print(f'Downloaded article: {result.title} ({result.pdf_url})')
-            database.upload_pdf(f'/arxiv_papers/{file_n}')
+            database.upload_file(f'/arxiv_papers/{file_n}')
             pdf_downloads += 1
 
         data = {

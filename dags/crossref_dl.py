@@ -131,7 +131,7 @@ def get_crossref_results(query, max_results):
     return results
 
 
-get_crossref_results('natural language processing', 10)
+
 
 
 def get_top_articles(input_file, top_n, output_file):

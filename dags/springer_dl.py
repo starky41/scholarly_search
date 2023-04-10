@@ -11,10 +11,10 @@ import database
 START = 1
 MAX_RESULTS = 100
 
-
-with open("constants/apikey.txt", "r") as apikey_file:
-    API_KEY = apikey_file.readlines()[0].strip()
-
+#
+# with open("apikey.txt", "r") as apikey_file:
+#     API_KEY = apikey_file.readlines()[0].strip()
+API_KEY = 'ab0d4871cfeceb52bb03fc7770ad9b56'
 def get_springer_results(query, results_to_get):
     def create_query(query):
         query = '%22' + f'{query}'.replace(' ', '+') + '%22'
@@ -91,7 +91,7 @@ def download_articles(articles, num_articles):
                     with open(file_name, 'wb') as f:
                         f.write(response.content)
                     print(f"Downloaded: {article['title']} to {folder_name}.")
-                    database.upload_pdf(f"springer_papers/{article['title']}.pdf")
+                    database.upload_file(f"springer_papers/{article['title']}.pdf")
                     count += 1
                     if count == num_articles:
                         return

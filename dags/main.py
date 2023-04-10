@@ -33,14 +33,13 @@ params = {
 
 def main():
     Path('./output/metadata').mkdir(parents=True, exist_ok=True)
+    Path('./output/visualizations').mkdir(parents=True, exist_ok=True)
 
     query = params['query']
 
     springer_results = springer_dl.get_springer_results(query,
                                                         results_to_get=params['springer']['max_metadata'])
-    visualization.create_wordcloud(springer_results)
-    visualization.visualize_openaccess_ratio(springer_results)
-    visualization.plot_subjects(springer_results, 10, query)
+
 
     springer_dl.download_articles(springer_results,
                                   params['springer']['max_pdfs'])
@@ -53,7 +52,7 @@ def main():
                                                max_results=params['arxiv']['main']['max_metadata'],
                                                num_pdf_downloads=params['arxiv']['main']['max_pdfs'])
 
-    visualization.plot_articles_by_year(arxiv_results, query)
+
     kw_results = arxiv_dl.get_kw_results(
         keywords,
         num_metadata=params['arxiv']['kw']['max_metadata'],
@@ -63,9 +62,14 @@ def main():
     crossref_results = crossref_dl.get_crossref_results(params['query'], max_results=params['crossref']['max_metadata'])
     crossref_dl.get_top_articles(input_file=params['crossref']['path'], top_n=params['crossref']['top_n'],
                                  output_file=params['crossref']['top_path'])
+    visualization.plot_articles_by_year(arxiv_results, query)
+    visualization.create_wordcloud(springer_results)
+    visualization.visualize_openaccess_ratio(springer_results)
+    visualization.plot_subjects(springer_results, 10, query)
     visualization.scatter_plot_citations(crossref_results)
     visualization.plot_publishers(crossref_results, query_name=query)
     visualization.plot_journals(crossref_results, query_name=query)
+
     database.add_record(name=query,
                         springer_data=springer_results,
                         arxiv_data=arxiv_results,
