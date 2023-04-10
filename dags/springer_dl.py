@@ -3,18 +3,19 @@ import requests
 import json
 from time import sleep
 import pandas as pd
+import os
 
+import database
 
 # Constants
 START = 1
 MAX_RESULTS = 100
-API_KEY = ""
-with open("constants/apikey.txt", "r") as apikey_file:
-    API_KEY = apikey_file.readlines()[0].strip()
 
-
+#
+# with open("apikey.txt", "r") as apikey_file:
+#     API_KEY = apikey_file.readlines()[0].strip()
+API_KEY = 'ab0d4871cfeceb52bb03fc7770ad9b56'
 def get_springer_results(query, results_to_get):
-
     def create_query(query):
         query = '%22' + f'{query}'.replace(' ', '+') + '%22'
         return query
@@ -29,7 +30,7 @@ def get_springer_results(query, results_to_get):
                     f'q={query}&'
                     f's={1 + i * 100}&'
                     f'p={MAX_RESULTS}&'
-                    f'api_key={API_KEY}',
+                    f'api_key={API_KEY}&',
                     timeout=20)
 
                 result = json.loads(response.text)
@@ -48,16 +49,15 @@ def get_springer_results(query, results_to_get):
         return flattened_list
 
     create_query(query)
+
     results = springer_find(results_to_get, query)
+    print(results[0])
+    # save json
+    with open('./output/metadata/springer.json', 'w') as f:
+        json.dump(results, f)
 
 
     return results
-
-
-# def save_springer_results(path, results):
-#     results = pd.DataFrame.from_dict(results)
-#     results.to_csv(f'./{path}/springer.csv', sep=',', index=False,
-#                    header=True)
 
 
 def find_keywords(query, results, max_kw=10):
@@ -71,6 +71,28 @@ def find_keywords(query, results, max_kw=10):
     keywords = keywords[:max_kw]
     query = query.replace("%22", "")
     query.replace("+", "_")
-    # with open(f'./{path}/keywords.txt', 'w') as f:
-    #     f.write(str(keywords))
     return keywords
+
+
+
+
+
+def download_articles(articles, num_articles):
+    count = 0
+    for article in articles:
+        if article['openaccess'] == 'true':
+            for url in article['url']:
+                if url['format'] == 'pdf':
+                    response = requests.get(url['value'])
+                    folder_name = './output/springer_papers'
+                    if not os.path.exists(folder_name):
+                        os.mkdir(folder_name)
+                    file_name = os.path.join(folder_name, article['title'] + '.pdf')
+                    with open(file_name, 'wb') as f:
+                        f.write(response.content)
+                    print(f"Downloaded: {article['title']} to {folder_name}.")
+                    database.upload_file(f"springer_papers/{article['title']}.pdf")
+                    count += 1
+                    if count == num_articles:
+                        return
+                    break
