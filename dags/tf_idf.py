@@ -38,7 +38,7 @@ feature_phrases = vectorizer.get_feature_names()
 kmeans_model = KMeans(n_clusters=5)
 kmeans_model.fit(tfidf.toarray())
 
-# Define cluster names based on keywords
+# Define cluster names based on keyword
 cluster_names = {}
 for i in range(5):
     cluster = kmeans_model.cluster_centers_[i]
