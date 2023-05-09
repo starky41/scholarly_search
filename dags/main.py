@@ -14,12 +14,12 @@ params = {
     'springer': {
         'max_metadata': 100,
         'max_pdfs': 1,
-        'num_kw': 0,
+        'num_kw': 2,
         'path': metadata_path + '/springer.json',
     },
     'arxiv': {
-        'main': {'max_metadata': 100, 'max_pdfs': 0},
-        'kw': {'max_metadata': 100, 'max_pdfs': 0},
+        'main': {'max_metadata': 1000, 'max_pdfs': 1},
+        'kw': {'max_metadata': 100, 'max_pdfs': 1},
         'path': metadata_path + '/arxiv.json',
     },
     'crossref': {
@@ -65,7 +65,7 @@ def main():
     visualization.plot_articles_by_year(arxiv_results, query)
     visualization.create_wordcloud(springer_results)
     visualization.visualize_openaccess_ratio(springer_results)
-    visualization.plot_subjects(springer_results, 10, query)
+    # visualization.plot_subjects(springer_results, 10, query)
     visualization.scatter_plot_citations(crossref_results)
     visualization.plot_publishers(crossref_results, query_name=query)
     visualization.plot_journals(crossref_results, query_name=query)

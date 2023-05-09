@@ -7,7 +7,6 @@ def mongo_conn():
     try:
         cluster = 'mongodb+srv://starky:xe97u5wDMS2kcZry@cluster0.jfbfflp.mongodb.net/scholarly_search_db?retryWrites=true&w=majority'
         client = MongoClient(cluster)
-        print('Successfully connected to MongoDB!')
         print(f'Databases: {client.list_database_names()}')
         print(f'Collections: {client.scholarly_search_db.list_collection_names()}')
         return client.scholarly_search_db
@@ -47,6 +46,8 @@ def add_record(name, springer_data, arxiv_data, crossref_data, kw_data):
     print(result)
     return result
 
-
-queries = db.metadata
-
+try:
+    queries = db.metadata
+    print('CONNECTED')
+except AttributeError:
+    print("Your IP address is not in the database white list, therefore the data will not be saved!")
