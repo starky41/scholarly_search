@@ -10,7 +10,7 @@ json_output = "output/metadata/arxiv_tf.json"
 with open(json_path) as f:
     metadata = json.load(f)
 
-
+#
 # Extract the text data
 text_data = []
 for doc in metadata:
