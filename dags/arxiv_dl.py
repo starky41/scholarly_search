@@ -7,7 +7,8 @@ from datetime import datetime
 
 from pathlib import Path
 
-RESULTS = './output/metadata/arxiv.json'
+
+RESULTS = '/output/metadata/arxiv.json'
 def get_arxiv_results(search_query, max_results, num_pdf_downloads):
     search = arxiv.Search(
         query=search_query,
@@ -23,9 +24,9 @@ def get_arxiv_results(search_query, max_results, num_pdf_downloads):
             break
         file_n = re.sub(r'\W+', ' ', result.title) + ".pdf"
         # file_n = re.sub(r'\W+', ' ', result.title).replace(' ', '_') + ".pdf"
-        Path('./output/arxiv_papers/').mkdir(parents=True, exist_ok=True)
+        Path('/output/arxiv_papers/').mkdir(parents=True, exist_ok=True)
         if pdf_downloads < num_pdf_downloads:
-            result.download_pdf(dirpath=f'./output/arxiv_papers/',
+            result.download_pdf(dirpath=f'/output/arxiv_papers/',
                                 filename=file_n)
             print(f'Downloaded article: {result.title} ({result.pdf_url})')
             database.upload_file(f'/arxiv_papers/{file_n}')
@@ -45,9 +46,11 @@ def get_arxiv_results(search_query, max_results, num_pdf_downloads):
             'pdf_url': result.pdf_url,
         }
 
-        print(f'{idx+1}/{max_results}')
-        print(data)
+
+        print(f"{idx+1}/{max_results} || Title: {data['title']} || Authors: {data['authors']} || link: {data['id']}")
         results.append(data)
+
+
 
     # Save json
     class DateTimeEncoder(json.JSONEncoder):
@@ -56,9 +59,12 @@ def get_arxiv_results(search_query, max_results, num_pdf_downloads):
                 return obj.isoformat()
             return json.JSONEncoder.default(self, obj)
 
+
     # Save json
-    with open(RESULTS, 'w') as f:
-        json.dump(results, f, cls=DateTimeEncoder)
+    with open(RESULTS, 'w', encoding='utf-8') as f:
+        json.dump(results, f, cls=DateTimeEncoder, ensure_ascii=False, indent=4)
+
+
 
     return results
 
@@ -91,5 +97,5 @@ def get_kw_results(keywords, num_metadata, num_pdf_downloads, main_query):
 
 
 def save_arxiv_results(path, results):
-    results.to_csv(f'./{path}/arxiv.csv', sep=',', index=False,
+    results.to_csv(f'/{path}/arxiv.csv', sep=',', index=False,
                    header=True)

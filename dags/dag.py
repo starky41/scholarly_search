@@ -23,7 +23,7 @@ def greet():
 
     import crossref_dl
 
-    metadata_path = './output/metadata'
+    metadata_path = '/output/metadata'
 
     params = {
         'query': 'Natural language processing',
@@ -46,7 +46,7 @@ def greet():
         }
     }
 
-    Path('./output/metadata').mkdir(parents=True, exist_ok=True)
+    Path('/output/metadata').mkdir(parents=True, exist_ok=True)
 
     query = params['query']
 
@@ -90,9 +90,9 @@ def greet():
 
 with DAG(
         default_args=default_args,
-        dag_id='my_dag',
+        dag_id='scholarly_search',
         description='Our first dag using python operator',
-        start_date=datetime(2023, 4, 7),
+        start_date=datetime(2023, 6, 1),
         schedule='@daily'
 ) as dag:
     task1 = PythonOperator(

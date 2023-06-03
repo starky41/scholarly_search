@@ -5,7 +5,8 @@ import gridfs
 
 def mongo_conn():
     try:
-        cluster = 'mongodb+srv://starky:xe97u5wDMS2kcZry@cluster0.jfbfflp.mongodb.net/scholarly_search_db?retryWrites=true&w=majority'
+        # cluster = 'mongodb+srv://starky:xe97u5wDMS2kcZry@cluster0.jfbfflp.mongodb.net/scholarly_search_db?retryWrites=true&w=majority'
+        cluster = 'mongodb://localhost:27017/'
         client = MongoClient(cluster)
         print(f'Databases: {client.list_database_names()}')
         print(f'Collections: {client.scholarly_search_db.list_collection_names()}')

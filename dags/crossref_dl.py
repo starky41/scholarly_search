@@ -2,8 +2,8 @@ import requests
 import json
 from pathlib import Path
 
-RESULTS = './output/metadata/crossref.json'
-Path('./output/metadata').mkdir(parents=True, exist_ok=True)
+RESULTS = '/output/metadata/crossref.json'
+Path('/output/metadata').mkdir(parents=True, exist_ok=True)
 
 def get_crossref_results(query, max_results):
     # set the Crossref API URL
@@ -125,13 +125,10 @@ def get_crossref_results(query, max_results):
 
 
     # save to json file
-    with open(RESULTS, 'w') as f:
-        json.dump(results, f)
+    with open(RESULTS, 'w', encoding='utf-8') as f:
+        json.dump(results, f, ensure_ascii=False, indent=4)
 
     return results
-
-
-
 
 
 def get_top_articles(input_file, top_n, output_file):
@@ -141,6 +138,6 @@ def get_top_articles(input_file, top_n, output_file):
     sorted_articles = sorted(articles, key=lambda x: x['citation_count'], reverse=True)
     top_articles = sorted_articles[:top_n]
 
-    with open(output_file, 'w') as f:
-        json.dump(top_articles, f)
+    with open(output_file, 'w', encoding='utf-8') as f:
+        json.dump(top_articles, f, ensure_ascii=False, indent=4)
 
