@@ -65,7 +65,7 @@ def greet():
     print(keywords)
     arxiv_results = arxiv_dl.get_arxiv_results(query,
                                                max_results=params['arxiv']['main']['max_metadata'],
-                                               num_pdf_downloads=params['arxiv']['main']['max_pdfs'])
+                                               files_to_download=params['arxiv']['main']['max_pdfs'])
 
     visualization.plot_articles_by_year(arxiv_results, query)
     kw_results = arxiv_dl.get_kw_results(

@@ -53,7 +53,7 @@ def get_springer_results(query, results_to_get):
     results = springer_find(results_to_get, query)
 
     # save json
-    with open('/output/metadata/springer.json', 'w', encoding='utf-8') as f:
+    with open('./output/metadata/springer.json', 'w', encoding='utf-8') as f:
         json.dump(results, f, ensure_ascii=False, indent=4)
 
 
@@ -84,7 +84,7 @@ def download_articles(articles, num_articles):
             for url in article['url']:
                 if url['format'] == 'pdf':
                     response = requests.get(url['value'])
-                    folder_name = '/output/springer_papers'
+                    folder_name = 'output/springer_papers'
                     if not os.path.exists(folder_name):
                         os.mkdir(folder_name)
                     file_name = os.path.join(folder_name, article['title'] + '.pdf')

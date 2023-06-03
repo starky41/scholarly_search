@@ -35,26 +35,12 @@ def extract_keywords():
     # Get the feature names (top 10 key phrases)
     feature_phrases = vectorizer.get_feature_names_out()
 
-    # Apply k-means clustering
-    kmeans_model = KMeans(n_clusters=5)
-    kmeans_model.fit(tfidf.toarray())
-
-    # Define cluster names based on keyword
-    cluster_names = {}
-    for i in range(5):
-        cluster = kmeans_model.cluster_centers_[i]
-        top_keywords = [feature_names[idx] for idx in cluster.argsort()[-10:]]
-        name = " ".join(top_keywords)
-        cluster_names[i] = name
 
     # Add cluster names to metadata
     for i, doc in enumerate(metadata):
         doc['tf_idf'] = {}
         doc['tf_idf']['keywords'] = [feature_names[idx] for idx in tfidf[i].indices]
         doc['tf_idf']['key_phrases'] = [feature_phrases[idx] for idx in tfidf_phrases[i].indices]
-        doc['k_means'] = {}
-        doc['k_means']['cluster_name'] = cluster_names[kmeans_model.labels_[i]]
-        doc['k_means']['cluster_number'] = kmeans_model.labels_[i]
 
     metadata = json.loads(json.dumps(metadata, default=lambda o: int(o) if isinstance(o, np.int32) else o))
     # Save the updated metadata JSON file

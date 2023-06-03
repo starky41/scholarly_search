@@ -2,8 +2,8 @@ import requests
 import json
 from pathlib import Path
 
-RESULTS = '/output/metadata/crossref.json'
-Path('/output/metadata').mkdir(parents=True, exist_ok=True)
+RESULTS = './output/metadata/crossref.json'
+Path('./output/metadata').mkdir(parents=True, exist_ok=True)
 
 def get_crossref_results(query, max_results):
     # set the Crossref API URL

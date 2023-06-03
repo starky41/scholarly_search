@@ -7,10 +7,10 @@ import visualization
 import crossref_dl
 import kw_extraction
 
-metadata_path = '/output/metadata'
+metadata_path = './output/metadata'
 
 params = {
-    'query': 'Natural language processing',
+    'query': 'China Firewall',
     'springer': {
         'max_metadata': 100,
         'max_pdfs': 5,
@@ -32,8 +32,8 @@ params = {
 
 
 def main():
-    Path('/output/metadata').mkdir(parents=True, exist_ok=True)
-    Path('/output/visualizations').mkdir(parents=True, exist_ok=True)
+    Path('./output/metadata').mkdir(parents=True, exist_ok=True)
+    Path('./output/visualizations').mkdir(parents=True, exist_ok=True)
 
     query = params['query']
 
@@ -49,7 +49,7 @@ def main():
     print(keywords)
     arxiv_results = arxiv_dl.get_arxiv_results(query,
                                                max_results=params['arxiv']['main']['max_metadata'],
-                                               num_pdf_downloads=params['arxiv']['main']['max_pdfs'])
+                                               num_files_to_download=params['arxiv']['main']['max_pdfs'])
 
     kw_results = arxiv_dl.get_kw_results(
         keywords,
