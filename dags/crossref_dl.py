@@ -121,8 +121,8 @@ def get_crossref_results(query, max_results):
 
     for i, result in enumerate(results):
         print(
-            f"{i + 1}. Title: {result['title']}\nAuthors: {result['authors']}\nPublished Date: {result['published_date']}\nJournal Name: {result['journal_name']}\nVolume: {result['volume']}\nIssue: {result['issue']}\nPage: {result['page']}\nCitation Count: {result['citation_count']}\nDOI: {result['doi']}\nURL: {result['url']}\nAbstract: {result['abstract']}\n\n")
-
+            #f"{i + 1}. Title: {result['title']}\nAuthors: {result['authors']}\nPublished Date: {result['published_date']}\nJournal Name: {result['journal_name']}\nVolume: {result['volume']}\nIssue: {result['issue']}\nPage: {result['page']}\nCitation Count: {result['citation_count']}\nDOI: {result['doi']}\nURL: {result['url']}\nAbstract: {result['abstract']}\n\n")
+            f"{i + 1}/{i} || Title: {result['title']} || Authors: {result['authors']}")
 
     # save to json file
     with open(RESULTS, 'w', encoding='utf-8') as f:

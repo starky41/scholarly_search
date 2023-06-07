@@ -4,9 +4,14 @@ import datetime
 from collections import Counter
 from textwrap import wrap
 import textwrap
-import pandas as pd
-
+import database
+import io
 import json
+
+
+
+
+
 
 def create_wordcloud(data):
     # create a list of all the keywords
@@ -20,7 +25,7 @@ def create_wordcloud(data):
 
     # plot the word cloud
 
-    #plt.figure(figsize=(12, 6))
+    # plt.figure(figsize=(12, 6))
     fig, ax = plt.subplots(figsize=(12, 6))
     plt.imshow(wordcloud, interpolation='bilinear')
     plt.axis('off')
@@ -111,11 +116,20 @@ def scatter_plot_citations(data):
 
 
 
+
 def plot_subjects(data, n, query_name):
     selection_size = len(data)
     subjects = []
     for d in data:
-        subjects += d['subjects']
+        try:
+            subjects += d['subjects']
+        except KeyError:
+            # handle empty 'subjects' list
+            pass
+    if not subjects:
+        # stop execution of the function if 'subjects' is empty
+        print('No subjects found in data')
+        return
     subject_counts = Counter(subjects)
     top_subjects = subject_counts.most_common(n)[::-1]  # Reverse order
     labels, values = zip(*top_subjects)
@@ -139,6 +153,7 @@ def plot_subjects(data, n, query_name):
     fig.savefig('./output/visualizations/subjects.png')
     plt.show()
 
+
 def plot_publishers(data, query_name, n=10):
     selection_size = len(data)
     publishers = []
@@ -146,7 +161,7 @@ def plot_publishers(data, query_name, n=10):
         if 'publisher' in d:
             publishers.append(d['publisher'])
     publisher_counts = Counter(publishers)
-    top_publishers = publisher_counts.most_common(n)[::-1] # Reverse order
+    top_publishers = publisher_counts.most_common(n)[::-1]  # Reverse order
     labels, values = zip(*top_publishers)
 
     # Wrap the publisher labels
@@ -171,6 +186,7 @@ def plot_publishers(data, query_name, n=10):
     fig.savefig('./output/visualizations/publishers.png')
     plt.show()
 
+
 def plot_journals(data, query_name, n=10):
     selection_size = len(data)
     journals = []
@@ -178,7 +194,7 @@ def plot_journals(data, query_name, n=10):
         if 'journal_name' in d:
             journals.append(d['journal_name'])
     journal_counts = Counter(journals)
-    top_journals = journal_counts.most_common(n)[::-1] # Reverse order
+    top_journals = journal_counts.most_common(n)[::-1]  # Reverse order
     labels, values = zip(*top_journals)
 
     # Wrap the journal labels
@@ -202,3 +218,7 @@ def plot_journals(data, query_name, n=10):
              bbox=dict(facecolor='white', alpha=0.5))
     fig.savefig('./output/visualizations/journals.png')
     plt.show()
+
+
+
+

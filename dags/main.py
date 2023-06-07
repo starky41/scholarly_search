@@ -1,5 +1,4 @@
 from pathlib import Path
-
 import database
 import arxiv_dl
 import springer_dl
@@ -10,10 +9,10 @@ import kw_extraction
 metadata_path = './output/metadata'
 
 params = {
-    'query': 'China Firewall',
+    'query': 'State television',
     'springer': {
         'max_metadata': 100,
-        'max_pdfs': 5,
+        'max_pdfs': 2,
         'num_kw': 10,
         'path': metadata_path + '/springer.json',
     },
@@ -24,7 +23,7 @@ params = {
     },
     'crossref': {
         'max_metadata': 100,  # limited by 1000.
-        'top_n': 10,
+        'top_n': 3,
         'path': metadata_path + '/crossref.json',
         'top_path': metadata_path + '/crossref_top.json',
     }
