@@ -1,6 +1,6 @@
-from data.constants import params
+from dags.constants import params
 from visualization import create_visualizations
-from data.paths import create_directories
+from dags.paths import create_directories
 from kw_extraction import extract_keywords
 import database
 import arxiv_dl
