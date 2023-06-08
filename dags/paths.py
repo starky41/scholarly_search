@@ -4,6 +4,7 @@ OUTPUT = './output'
 METADATA_OUTPUT = f'{OUTPUT}/metadata'
 API_KEY = './data'
 
+
 def create_directories():
     directories = ['metadata', 'visualizations', 'arxiv_papers', 'springer_papers']
     for directory in directories:

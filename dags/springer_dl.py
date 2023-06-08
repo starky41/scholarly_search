@@ -5,9 +5,9 @@ from time import sleep
 import pandas as pd
 import os
 from database import upload_file
-from data.paths import metadata_paths, paper_paths
-from data.apikey import API_KEY
-from data.constants import *
+from paths import paper_paths
+from apikey import API_KEY
+from constants import *
 
 # Constants
 START = 1

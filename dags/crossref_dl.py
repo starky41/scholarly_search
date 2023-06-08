@@ -1,6 +1,6 @@
 import requests
 import json
-from data.paths import metadata_paths
+from paths import metadata_paths
 
 RESULTS = metadata_paths['crossref']
 

@@ -4,7 +4,7 @@ import arxiv
 import re
 import json
 from datetime import datetime
-from data.paths import metadata_paths, paper_paths
+from paths import metadata_paths, paper_paths
 
 ARXIV_METADATA_OUTPUT = metadata_paths['arxiv']
 

@@ -1,7 +1,7 @@
-from data.paths import metadata_paths
+from paths import metadata_paths
 
 params = {
-    'query': 'Solar eclipse',
+    'query': 'Neural networks',
     'springer': {
         'max_metadata': 100,
         'max_pdfs': 2,
