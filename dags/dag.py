@@ -8,6 +8,28 @@ default_args = {
     'retry_delay': timedelta(minutes=5)
 }
 
+metadata_path = './output/metadata'
+params = {
+    'query': 'Classical music',
+    'springer': {
+        'max_metadata': 100,
+        'max_pdfs': 5,
+        'num_kw': 5,
+        'path': metadata_path + '/springer.json',
+    },
+    'arxiv': {
+        'main': {'max_metadata': 100, 'max_pdfs': 2},
+        'kw': {'max_metadata': 100, 'max_pdfs': 2},
+        'path': metadata_path + '/arxiv.json',
+    },
+    'crossref': {
+        'max_metadata': 100,  # limited by 1000.
+        'top_n': 10,
+        'path': metadata_path + '/crossref.json',
+        'top_path': metadata_path + '/crossref_top.json',
+    }
+}
+
 
 def greet():
     from pathlib import Path
@@ -18,45 +40,21 @@ def greet():
     import crossref_dl
     import kw_extraction
 
-    metadata_path = './output/metadata'
-
-    params = {
-        'query': 'Classical music',
-        'springer': {
-            'max_metadata': 100,
-            'max_pdfs': 5,
-            'num_kw': 5,
-            'path': metadata_path + '/springer.json',
-        },
-        'arxiv': {
-            'main': {'max_metadata': 100, 'max_pdfs': 2},
-            'kw': {'max_metadata': 100, 'max_pdfs': 2},
-            'path': metadata_path + '/arxiv.json',
-        },
-        'crossref': {
-            'max_metadata': 100,  # limited by 1000.
-            'top_n': 10,
-            'path': metadata_path + '/crossref.json',
-            'top_path': metadata_path + '/crossref_top.json',
-        }
-    }
-
     Path('./output/metadata').mkdir(parents=True, exist_ok=True)
     Path('./output/visualizations').mkdir(parents=True, exist_ok=True)
 
     query = params['query']
 
-    springer_results = springer_dl.get_springer_results(query,
-                                                        results_to_get=params['springer']['max_metadata'])
-    springer_dl.download_articles(springer_results,
-                                  params['springer']['max_pdfs'])
+    springer_results = springer_dl.get_springer_results(query, metadata_to_download=params['springer']['max_metadata'])
+    springer_dl.download_papers(springer_results,
+                                params['springer']['max_pdfs'])
 
     keywords = springer_dl.find_keywords(query,
                                          springer_results,
                                          max_kw=params['springer']['num_kw'])
     print(keywords)
     arxiv_results = arxiv_dl.get_arxiv_results(query,
-                                               max_results=params['arxiv']['main']['max_metadata'],
+                                               num_metadata_to_download=params['arxiv']['main']['max_metadata'],
                                                num_files_to_download=params['arxiv']['main']['max_pdfs'])
 
     kw_results = arxiv_dl.get_kw_results(
@@ -79,9 +77,10 @@ def greet():
                         crossref_data=crossref_results,
                         kw_data=kw_results)
 
+
 with DAG(
         default_args=default_args,
-        dag_id='v38',
+        dag_id='v39',
         description='Our first dag using python operator',
         start_date=datetime(2023, 6, 7),
         schedule='@daily'

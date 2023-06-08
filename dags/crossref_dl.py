@@ -1,9 +1,9 @@
 import requests
 import json
-from pathlib import Path
+from data.paths import metadata_paths
 
-RESULTS = './output/metadata/crossref.json'
-Path('./output/metadata').mkdir(parents=True, exist_ok=True)
+RESULTS = metadata_paths['crossref']
+
 
 def get_crossref_results(query, max_results):
     # set the Crossref API URL
@@ -14,7 +14,7 @@ def get_crossref_results(query, max_results):
         "query": query,
         "sort": "relevance",
         "order": "desc",
-        "rows": max_results # limit of 1000 per request.
+        "rows": max_results  # limit of 1000 per request.
     }
 
     # send a GET request to the Crossref API
@@ -41,7 +41,7 @@ def get_crossref_results(query, max_results):
 
         # get the authors
         author = ", ".join([f"{author.get('family', 'N/A')}, {author.get('given', 'N/A')}" for author in
-                             item.get('author', [{'family': 'N/A', 'given': 'N/A'}])])
+                            item.get('author', [{'family': 'N/A', 'given': 'N/A'}])])
 
         # get the authors
         authors = item.get('author', [{'family': 'N/A', 'given': 'N/A', 'sequence': 'N/A', 'affiliation': []}])
@@ -121,7 +121,7 @@ def get_crossref_results(query, max_results):
 
     for i, result in enumerate(results):
         print(
-            #f"{i + 1}. Title: {result['title']}\nAuthors: {result['authors']}\nPublished Date: {result['published_date']}\nJournal Name: {result['journal_name']}\nVolume: {result['volume']}\nIssue: {result['issue']}\nPage: {result['page']}\nCitation Count: {result['citation_count']}\nDOI: {result['doi']}\nURL: {result['url']}\nAbstract: {result['abstract']}\n\n")
+            # f"{i + 1}. Title: {result['title']}\nAuthors: {result['authors']}\nPublished Date: {result['published_date']}\nJournal Name: {result['journal_name']}\nVolume: {result['volume']}\nIssue: {result['issue']}\nPage: {result['page']}\nCitation Count: {result['citation_count']}\nDOI: {result['doi']}\nURL: {result['url']}\nAbstract: {result['abstract']}\n\n")
             f"{i + 1}/{len(results)} || Title: {result['title']} || Authors: {result['authors']}")
 
     # save to json file
@@ -140,4 +140,3 @@ def get_top_articles(input_file, top_n, output_file):
 
     with open(output_file, 'w', encoding='utf-8') as f:
         json.dump(top_articles, f, ensure_ascii=False, indent=4)
-

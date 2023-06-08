@@ -16,10 +16,6 @@ def mongo_conn():
         print('Error in MongoDB connection', e)
 
 
-db = mongo_conn()
-fs = gridfs.GridFS(db)
-
-
 def upload_file(filename):
     with open(f'./output/{filename}', 'rb') as f:
         fs.put(f, filename=filename)
@@ -40,6 +36,7 @@ def png_to_bson(path='./output/visualizations'):
         documents.append(document)
 
     return documents
+
 
 def add_record(name, springer_data, arxiv_data, crossref_data, kw_data):
     result = queries.delete_many({})
@@ -65,8 +62,13 @@ def add_record(name, springer_data, arxiv_data, crossref_data, kw_data):
     return result
 
 
+db = mongo_conn()
+fs = gridfs.GridFS(db)
+
 try:
     queries = db.metadata
     print('CONNECTED')
 except AttributeError:
     print("Your IP address is not in the database white list, therefore the data will not be saved!")
+
+

@@ -4,15 +4,15 @@ import arxiv
 import re
 import json
 from datetime import datetime
-from pathlib import Path
+from data.paths import metadata_paths, paper_paths
 
-ARXIV_METADATA_OUTPUT = './output/metadata/arxiv.json'
+ARXIV_METADATA_OUTPUT = metadata_paths['arxiv']
 
 
-def get_arxiv_results(search_query, max_results, num_files_to_download):
+def get_arxiv_results(search_query, num_metadata_to_download, num_files_to_download):
     search = arxiv.Search(
         query=search_query,
-        max_results=max_results,
+        max_results=num_metadata_to_download,
         sort_by=arxiv.SortCriterion.Relevance,
         sort_order=arxiv.SortOrder.Descending
     )
@@ -20,13 +20,12 @@ def get_arxiv_results(search_query, max_results, num_files_to_download):
     results = []
     pdf_downloads = 0
     for idx, result in enumerate(search.results()):
-        if len(results) >= max_results:
+        if len(results) >= num_metadata_to_download:
             break
         file_n = re.sub(r'\W+', ' ', result.title) + ".pdf"
-        # file_n = re.sub(r'\W+', ' ', result.title).replace(' ', '_') + ".pdf"
-        Path('./output/arxiv_papers/').mkdir(parents=True, exist_ok=True)
+
         if pdf_downloads < num_files_to_download:
-            result.download_pdf(dirpath=f'./output/arxiv_papers/',
+            result.download_pdf(dirpath=f'{paper_paths["arxiv"]}/',
                                 filename=file_n)
             print(f'Downloaded article: {result.title} ({result.pdf_url})')
             database.upload_file(f'/arxiv_papers/{file_n}')
@@ -46,7 +45,7 @@ def get_arxiv_results(search_query, max_results, num_files_to_download):
             'pdf_url': result.pdf_url,
         }
 
-        print(f"{idx + 1}/{max_results} || Title: {data['title']} || Authors: {data['authors']} || link: {data['id']}")
+        print(f"{idx + 1}/{num_metadata_to_download} || Title: {data['title']} || Authors: {data['authors']} || link: {data['id']}")
         results.append(data)
 
     # Save json
@@ -67,14 +66,12 @@ def get_kw_results(keywords, num_metadata, num_pdf_downloads, main_query):
     kw_results = []
     for keyword in keywords:
         try:
-            # path = services.create_folder(f'keywords/{keyword}')
             print(f'\nDownloading data on {keyword}...')
 
             # Adding keywords to the main term
-
             kwrd_query = f'{keyword} AND {main_query}'
-
-            arxiv_results = get_arxiv_results(kwrd_query, max_results=num_metadata, num_files_to_download=num_pdf_downloads)
+            arxiv_results = get_arxiv_results(kwrd_query, num_metadata_to_download=num_metadata,
+                                              num_files_to_download=num_pdf_downloads)
             kw_results.append({'keyword': f'{keyword}',
                                'arxiv': {
                                    'metadata': arxiv_results
