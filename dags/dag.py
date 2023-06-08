@@ -2,7 +2,6 @@ from datetime import datetime, timedelta
 from airflow import DAG
 from airflow.operators.python import PythonOperator
 
-
 default_args = {
     'owner': 'starky',
     'retries': 5,
@@ -10,10 +9,7 @@ default_args = {
 }
 
 
-
-
 def greet():
-
     from pathlib import Path
     import database
     import arxiv_dl
@@ -25,7 +21,7 @@ def greet():
     metadata_path = './output/metadata'
 
     params = {
-        'query': 'International science',
+        'query': 'Classical music',
         'springer': {
             'max_metadata': 100,
             'max_pdfs': 5,
@@ -52,7 +48,6 @@ def greet():
 
     springer_results = springer_dl.get_springer_results(query,
                                                         results_to_get=params['springer']['max_metadata'])
-
     springer_dl.download_articles(springer_results,
                                   params['springer']['max_pdfs'])
 
@@ -73,13 +68,8 @@ def greet():
     crossref_results = crossref_dl.get_crossref_results(params['query'], max_results=params['crossref']['max_metadata'])
     crossref_dl.get_top_articles(input_file=params['crossref']['path'], top_n=params['crossref']['top_n'],
                                  output_file=params['crossref']['top_path'])
-    visualization.plot_articles_by_year(arxiv_results, query)
-    visualization.create_wordcloud(springer_results)
-    visualization.visualize_openaccess_ratio(springer_results)
-    visualization.plot_subjects(springer_results, 10, query)
-    visualization.scatter_plot_citations(crossref_results)
-    visualization.plot_publishers(crossref_results, query_name=query)
-    visualization.plot_journals(crossref_results, query_name=query)
+
+    visualization.create_visualizations(springer_results, arxiv_results, crossref_results, query)
 
     arxiv_results = kw_extraction.extract_keywords()
 
@@ -88,11 +78,12 @@ def greet():
                         arxiv_data=arxiv_results,
                         crossref_data=crossref_results,
                         kw_data=kw_results)
+
 with DAG(
         default_args=default_args,
-        dag_id='v35',
+        dag_id='v38',
         description='Our first dag using python operator',
-        start_date=datetime(2023, 6, 6),
+        start_date=datetime(2023, 6, 7),
         schedule='@daily'
 ) as dag:
     task1 = PythonOperator(
