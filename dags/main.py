@@ -1,15 +1,14 @@
-from dags.constants import params
+from constants import params
 from visualization import create_visualizations
-from dags.paths import create_directories
+from paths import create_directories
 from kw_extraction import extract_keywords
 import database
-import arxiv_dl
+import arxiv_downloader
 import springer_dl
 import crossref_dl
 
 
 def main():
-
     create_directories()
     query = params['query']
 
@@ -19,16 +18,12 @@ def main():
                                          springer_results,
                                          max_kw=params['springer']['num_kw'])
     print(keywords)
-    arxiv_results = arxiv_dl.get_arxiv_results(query,
-                                               num_metadata_to_download=params['arxiv']['main']['max_metadata'],
-                                               num_files_to_download=params['arxiv']['main']['max_pdfs'])
+    arxiv_results = arxiv_downloader.search_and_download_arxiv_papers()
 
-    kw_results = arxiv_dl.get_kw_results(
-        keywords,
-        num_metadata=params['arxiv']['kw']['max_metadata'],
-        num_pdf_downloads=params['arxiv']['kw']['max_pdfs'],
-        main_query=params['query']
-    )
+    kw_results = arxiv_downloader.query_arxiv_keywords(keywords,
+                                                       params['arxiv']['kw']['max_metadata'],
+                                                       params['arxiv']['kw']['max_pdfs'])
+
     crossref_results = crossref_dl.get_crossref_results(query, max_results=params['crossref']['max_metadata'])
     crossref_dl.get_top_articles(input_file=params['crossref']['path'], top_n=params['crossref']['top_n'],
                                  output_file=params['crossref']['top_path'])
