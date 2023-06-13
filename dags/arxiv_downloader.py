@@ -30,6 +30,14 @@ class DateTimeEncoder(json.JSONEncoder):
         return json.JSONEncoder.default(self, obj)
 
 
+class DateTimeEncoder(json.JSONEncoder):
+    def default(self, obj):
+        if isinstance(obj, datetime):
+            return obj.isoformat()
+        # Check for other types you need to serialize here
+        return super().default(obj)
+
+
 def generate_arxiv_metadata(search, num_metadata_to_download):
     results = list()
 
@@ -62,9 +70,11 @@ def generate_arxiv_metadata(search, num_metadata_to_download):
     return results
 
 
-def dump_to_json(results):
+def dump_to_json(results, cls=DateTimeEncoder):
     with open(ARXIV_METADATA_OUTPUT, 'w', encoding='utf-8') as f:
-        json.dump(results, f, cls=DateTimeEncoder, ensure_ascii=False, indent=4)
+        json.dump(results, f,
+                  cls=cls,
+                  ensure_ascii=False, indent=4)
 
 
 def download_pdf_files(search, num_metadata_to_download, num_pdf_files_to_download):
@@ -86,27 +96,29 @@ def query_arxiv_keywords(keywords,
                          num_metadata_to_download,
                          num_pdf_files_to_download,
                          main_query=params['query']):
-    keyword_results = list()
-
+    all_keywords_results = []
     for keyword in keywords:
         print(f'\nDownloading data on keyword {keyword}...')
         keyword_query = f'{keyword} AND {main_query}'
         search = query_arxiv(keyword_query, num_metadata_to_download)
-        generate_arxiv_metadata(search, num_metadata_to_download)
+        keyword_query_results = generate_arxiv_metadata(search, num_metadata_to_download)
         download_pdf_files(search, num_metadata_to_download, num_pdf_files_to_download)
-        keyword_results.append({'keyword': f'{keyword}',
-                                'arxiv': {
-                                    'metadata': keyword_results
-                                }
-                                })
+        all_keywords_results.append({'keyword': f'{keyword}',
+                                     'arxiv': {
+                                         'metadata': keyword_query_results
+                                     }})
         sleep(1)
 
+    return all_keywords_results
 
-def search_and_download_arxiv_papers():
+
+def search_and_download_arxiv_papers(save_to_json=True, cls=DateTimeEncoder):
     search = query_arxiv(params['query'], params['arxiv']['main']['max_metadata'])
+
     metadata = generate_arxiv_metadata(search, params['arxiv']['main']['max_metadata'])
-    dump_to_json(metadata)
+
+    if save_to_json:
+        dump_to_json(metadata, cls=cls)
+
     download_pdf_files(search, params['arxiv']['main']['max_metadata'], params['arxiv']['main']['max_pdfs'])
-
     return metadata
-

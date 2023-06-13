@@ -1,67 +1,133 @@
 from datetime import datetime, timedelta
 from airflow import DAG
 from airflow.operators.python import PythonOperator
+from constants import params
+import json
+import arxiv_downloader
+from datetime import datetime
 
 default_args = {
     'owner': 'starky',
     'retries': 5,
-    'retry_delay': timedelta(minutes=5)
+    'retry_delay': timedelta(minutes=5),
+    'executor': 'LocalExecutor',
 }
 
 
-def greet():
-    from constants import params
-    from visualization import create_visualizations
+def create_directories():
     from paths import create_directories
-    from kw_extraction import extract_keywords
-    import database
-    import arxiv_dl
-    import springer_dl
-    import crossref_dl
-
     create_directories()
-    query = params['query']
 
-    springer_results = springer_dl.get_springer_results(query, metadata_to_download=params['springer']['max_metadata'])
 
-    keywords = springer_dl.find_keywords(query,
-                                         springer_results,
-                                         max_kw=params['springer']['num_kw'])
-    print(keywords)
-    arxiv_results = arxiv_dl.get_arxiv_results(query,
-                                               num_metadata_to_download=params['arxiv']['main']['max_metadata'],
-                                               num_files_to_download=params['arxiv']['main']['max_pdfs'])
+class SpringerDownloadOperator(PythonOperator):
+    def __init__(self, *args, **kwargs):
+        super().__init__(python_callable=self.execute, *args, **kwargs)
 
-    kw_results = arxiv_dl.get_kw_results(
-        keywords,
-        num_metadata=params['arxiv']['kw']['max_metadata'],
-        num_pdf_downloads=params['arxiv']['kw']['max_pdfs'],
-        main_query=params['query']
-    )
-    crossref_results = crossref_dl.get_crossref_results(query, max_results=params['crossref']['max_metadata'])
-    crossref_dl.get_top_articles(input_file=params['crossref']['path'], top_n=params['crossref']['top_n'],
-                                 output_file=params['crossref']['top_path'])
+    def execute(self, context):
+        import springer_dl
+        springer_results = springer_dl.get_springer_results(params['query'],
+                                                            metadata_to_download=params['springer']['max_metadata'])
+        return springer_results
 
-    create_visualizations(springer_results, arxiv_results, crossref_results, query)
 
-    arxiv_results = extract_keywords()
+class GetKeywordsOperator(PythonOperator):
+    def __init__(self, *args, **kwargs):
+        super().__init__(python_callable=self.execute, *args, **kwargs)
 
-    database.add_record(name=query,
-                        springer_data=springer_results,
-                        arxiv_data=arxiv_results,
-                        crossref_data=crossref_results,
-                        kw_data=kw_results)
+    def execute(self, context):
+        import springer_dl
+        from constants import params
+        springer_results = context['ti'].xcom_pull(task_ids='springer_download_task')
+        keywords = springer_dl.find_keywords(params['query'], springer_results, max_kw=params['springer']['num_kw'])
+        print(keywords)
+        return keywords
+
+
+class ArxivDownloadOperator(PythonOperator):
+    def __init__(self, *args, **kwargs):
+        super().__init__(python_callable=self.execute, *args, **kwargs)
+
+    def execute(self, context):
+        arxiv_results = arxiv_downloader.search_and_download_arxiv_papers(save_to_json=False)
+
+        # create custom JSON encoder that converts datetime to ISO-format string
+        class CustomJSONEncoder(json.JSONEncoder):
+            def default(self, o):
+                if isinstance(o, datetime):
+                    return o.isoformat()
+                return super().default(o)
+
+        # serialize data using custom JSON encoder
+        serialized_results = json.dumps(arxiv_results, cls=CustomJSONEncoder)
+
+        # set serialized data to XCom variable
+        context['ti'].xcom_push(key='arxiv_results', value=serialized_results)
+
+        return serialized_results
+
+class ArxivDownloadKeywordsMetadataOperator(PythonOperator):
+    def __init__(self, *args, **kwargs):
+        super().__init__(python_callable=self.execute, *args, **kwargs)
+
+    def execute(self, context):
+        keywords = context['ti'].xcom_pull(task_ids='get_keywords_task')
+        kw_results = arxiv_downloader.query_arxiv_keywords(keywords,
+                                                           params['arxiv']['kw']['max_metadata'],
+                                                           params['arxiv']['kw']['max_pdfs'])
+        # create custom JSON encoder that converts datetime to ISO-format string
+        class CustomJSONEncoder(json.JSONEncoder):
+            def default(self, o):
+                if isinstance(o, datetime):
+                    return o.isoformat()
+                return super().default(o)
+
+        # serialize data using custom JSON encoder
+        serialized_results = json.dumps(kw_results, cls=CustomJSONEncoder)
+
+        # set serialized data to XCom variable
+        context['ti'].xcom_push(key='kw_results', value=serialized_results)
+
+        return serialized_results
+
+# class ProcessArxivOperator(PythonOperator):
+#     def execute(self, context):
+#         serialized_results = context['ti'].xcom_pull(key='arxiv_results')
+#
+#         # deserialize JSON string into Python object
+#         arxiv_results = json.loads(serialized_results,
+#                                    object_hook=lambda d: {k: parser.parse(v) if isinstance(v, str) and ':' in v else v
+#                                                           for k, v in d.items()})
+#
+#         # process the arxiv results as needed
+#         # ...
+#
+#         return arxiv_results
 
 
 with DAG(
         default_args=default_args,
-        dag_id='v46',
+        dag_id='dv32',
         description='Our first dag using python operator',
         start_date=datetime(2023, 6, 7),
-        schedule='@daily'
+        schedule='@once'
+
 ) as dag:
-    task1 = PythonOperator(
-        task_id='scholarly_search',
-        python_callable=greet
+    op_create_directories = PythonOperator(task_id='create_directories', python_callable=create_directories)
+    springer_download_task = SpringerDownloadOperator(
+        task_id='springer_download_task',
+        dag=dag
     )
-    task1
+    get_keywords_task = GetKeywordsOperator(
+        task_id='get_keywords_task',
+        dag=dag
+    )
+    arxiv_download_task = ArxivDownloadOperator(
+        task_id='arxiv_download_task',
+        dag=dag
+    )
+    arxiv_download_keywords_metadata = ArxivDownloadKeywordsMetadataOperator(
+        task_id='arxiv_download_keywords_metadata',
+        dag=dag
+    )
+
+    op_create_directories >> springer_download_task >> get_keywords_task >> arxiv_download_task >> arxiv_download_keywords_metadata

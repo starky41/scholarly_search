@@ -1,7 +1,7 @@
 from paths import metadata_paths
 
 params = {
-    'query': 'Quantum Physics',
+    'query': 'Quant computing',
     'springer': {
         'max_metadata': 100,
         'max_pdfs': 2,
