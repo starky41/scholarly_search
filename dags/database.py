@@ -2,7 +2,7 @@ import datetime
 from pymongo import MongoClient
 import gridfs
 import os
-
+from constants import params
 
 def mongo_conn():
     try:
@@ -38,10 +38,10 @@ def png_to_bson(path='./output/visualizations'):
     return documents
 
 
-def add_record(name, springer_data, arxiv_data, crossref_data, kw_data):
+def add_record(springer_data, arxiv_data, crossref_data, kw_data, query=params['query']):
     result = queries.delete_many({})
     visualizations = png_to_bson()
-    db_record = {"name": name,
+    db_record = {"name": query,
                  "datetime": datetime.datetime.utcnow(),
                  'data': {'query': {'springer': springer_data,
                                     'arxiv':

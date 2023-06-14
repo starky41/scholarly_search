@@ -7,9 +7,10 @@ import textwrap
 import database
 import io
 import json
+from constants import params
 
 
-def create_visualizations(springer_data, arxiv_data, crossref_data, query_name):
+def create_visualizations(springer_data, arxiv_data, crossref_data, query_name=params['query']):
     create_wordcloud(springer_data)
     plot_articles_by_year(arxiv_data, query_name)
     visualize_openaccess_ratio(springer_data)

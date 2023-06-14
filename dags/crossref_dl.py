@@ -1,11 +1,12 @@
 import requests
 import json
 from paths import metadata_paths
+from constants import params
 
 RESULTS = metadata_paths['crossref']
 
 
-def get_crossref_results(query, max_results):
+def get_crossref_results(query=params['query'], max_results=params['crossref']['max_metadata']):
     url = "https://api.crossref.org/works"
 
     params = {
@@ -95,7 +96,10 @@ def get_crossref_results(query, max_results):
     return results
 
 
-def get_top_articles(input_file, top_n, output_file):
+def get_top_articles(top_n=params['crossref']['top_n'],
+                     input_file=params['crossref']['path'],
+                     output_file=params['crossref']['top_path']):
+
     with open(input_file, 'r') as f:
         articles = json.load(f)
 

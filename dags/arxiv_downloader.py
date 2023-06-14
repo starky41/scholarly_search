@@ -19,23 +19,7 @@ def query_arxiv(search_term, num_metadata_to_download):
         sort_by=arxiv.SortCriterion.Relevance,
         sort_order=arxiv.SortOrder.Descending
     )
-
     return search
-
-
-class DateTimeEncoder(json.JSONEncoder):
-    def default(self, obj):
-        if isinstance(obj, datetime):
-            return obj.isoformat()
-        return json.JSONEncoder.default(self, obj)
-
-
-class DateTimeEncoder(json.JSONEncoder):
-    def default(self, obj):
-        if isinstance(obj, datetime):
-            return obj.isoformat()
-        # Check for other types you need to serialize here
-        return super().default(obj)
 
 
 def generate_arxiv_metadata(search, num_metadata_to_download):
@@ -70,14 +54,16 @@ def generate_arxiv_metadata(search, num_metadata_to_download):
     return results
 
 
-def dump_to_json(results, cls=DateTimeEncoder):
+def dump_to_json(results):
     with open(ARXIV_METADATA_OUTPUT, 'w', encoding='utf-8') as f:
         json.dump(results, f,
-                  cls=cls,
+                  cls=DateTimeEncoder,
                   ensure_ascii=False, indent=4)
 
 
-def download_pdf_files(search, num_metadata_to_download, num_pdf_files_to_download):
+def download_pdf_files(search,
+                       num_metadata_to_download=params['arxiv']['main']['max_metadata'],
+                       num_pdf_files_to_download=params['arxiv']['main']['max_pdfs']):
     if num_pdf_files_to_download <= num_metadata_to_download:
         num_files_downloaded = 0
         for result in search.results():
@@ -93,16 +79,16 @@ def download_pdf_files(search, num_metadata_to_download, num_pdf_files_to_downlo
 
 
 def query_arxiv_keywords(keywords,
-                         num_metadata_to_download,
-                         num_pdf_files_to_download,
                          main_query=params['query']):
     all_keywords_results = []
-    for keyword in keywords:
+    for idx, keyword in enumerate(keywords):
         print(f'\nDownloading data on keyword {keyword}...')
-        keyword_query = f'{keyword} AND {main_query}'
-        search = query_arxiv(keyword_query, num_metadata_to_download)
-        keyword_query_results = generate_arxiv_metadata(search, num_metadata_to_download)
-        download_pdf_files(search, num_metadata_to_download, num_pdf_files_to_download)
+        keyword_query_results = search_and_download_arxiv_papers(query=f'{keyword} AND {main_query}',
+                                                                 num_metadata_to_download=params['arxiv']['kw'][
+                                                                     'max_metadata'],
+                                                                 num_pdf_files_to_download=params['arxiv']['kw'][
+                                                                     'max_pdfs'],
+                                                                 save_to_json=False)
         all_keywords_results.append({'keyword': f'{keyword}',
                                      'arxiv': {
                                          'metadata': keyword_query_results
@@ -112,13 +98,40 @@ def query_arxiv_keywords(keywords,
     return all_keywords_results
 
 
-def search_and_download_arxiv_papers(save_to_json=True, cls=DateTimeEncoder):
-    search = query_arxiv(params['query'], params['arxiv']['main']['max_metadata'])
+def search_and_download_arxiv_papers(query=params['query'],
+                                     num_metadata_to_download=params['arxiv']['main']['max_metadata'],
+                                     num_pdf_files_to_download=params['arxiv']['main']['max_pdfs'],
+                                     save_to_json=True, download_files='True'):
 
-    metadata = generate_arxiv_metadata(search, params['arxiv']['main']['max_metadata'])
+    search = query_arxiv(query, num_metadata_to_download)
+    metadata = generate_arxiv_metadata(search, num_metadata_to_download)
 
     if save_to_json:
-        dump_to_json(metadata, cls=cls)
+        dump_to_json(metadata)
 
-    download_pdf_files(search, params['arxiv']['main']['max_metadata'], params['arxiv']['main']['max_pdfs'])
+    if download_files:
+        download_pdf_files(search, num_pdf_files_to_download)
+
     return metadata
+
+
+def serialize(metadata):
+    # serialize data using custom JSON encoder
+    # ! IMPORTANT airflow dags cannot store unserialized data in xcoms
+    serialized_metadata = json.dumps(metadata, cls=DateTimeEncoder)
+
+    return serialized_metadata
+
+
+class DateTimeEncoder(json.JSONEncoder):
+    def default(self, obj):
+        if isinstance(obj, datetime):
+            return obj.isoformat()
+        # Check for other types you need to serialize here
+        return super().default(obj)
+
+# class DateTimeEncoder(json.JSONEncoder):
+#     def default(self, obj):
+#         if isinstance(obj, datetime):
+#             return obj.isoformat()
+#         return json.JSONEncoder.default(self, obj)

@@ -16,7 +16,7 @@ MAX_RESULTS = 100
 springer_params = params['springer']
 
 
-def get_springer_results(query, metadata_to_download=springer_params['max_metadata'],
+def get_springer_results(query=params['query'], metadata_to_download=springer_params['max_metadata'],
                          pdfs_to_download=springer_params['max_pdfs']):
     create_query(query)
     results = springer_find(metadata_to_download, query)
@@ -61,7 +61,7 @@ def springer_find(results_to_get, query):
     return flattened_list
 
 
-def find_keywords(query, results, max_kw=10):
+def find_keywords(results, query=params['query'], max_kw=springer_params['num_kw']):
     results = pd.DataFrame.from_dict(results)
     keywords = results['keyword'].apply(pd.Series).stack().reset_index(drop=True)
     keywords = list(keywords.value_counts().index[:30])

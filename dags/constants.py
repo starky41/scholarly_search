@@ -1,11 +1,11 @@
 from paths import metadata_paths
 
 params = {
-    'query': 'Quant computing',
+    'query': 'Machine Learning',
     'springer': {
         'max_metadata': 100,
         'max_pdfs': 2,
-        'num_kw': 5,
+        'num_kw': 3,
         'path': metadata_paths['springer'],
     },
     'arxiv': {
