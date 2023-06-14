@@ -81,7 +81,7 @@ def download_pdf_files(search,
 def query_arxiv_keywords(keywords,
                          main_query=params['query']):
     all_keywords_results = []
-    for idx, keyword in enumerate(keywords):
+    for keyword in keywords:
         print(f'\nDownloading data on keyword {keyword}...')
         keyword_query_results = search_and_download_arxiv_papers(query=f'{keyword} AND {main_query}',
                                                                  num_metadata_to_download=params['arxiv']['kw'][

@@ -1,7 +1,7 @@
 from paths import metadata_paths
 
 params = {
-    'query': 'Machine Learning',
+    'query': 'Parallel computing',
     'springer': {
         'max_metadata': 100,
         'max_pdfs': 2,

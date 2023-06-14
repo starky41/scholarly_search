@@ -19,7 +19,7 @@ def main():
     kw_results = query_arxiv_keywords(keywords)
 
     crossref_results = crossref_dl.get_crossref_results()
-    crossref_dl.get_top_articles()
+    crossref_dl.get_top_articles(crossref_results)
 
     create_visualizations(springer_results, arxiv_results, crossref_results)
 

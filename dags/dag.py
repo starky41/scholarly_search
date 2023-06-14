@@ -1,4 +1,4 @@
-from datetime import datetime, timedelta
+from datetime import timedelta
 from airflow import DAG
 from airflow.operators.python import PythonOperator
 from datetime import datetime
@@ -61,15 +61,40 @@ class ArxivDownloadKeywordsMetadataOperator(PythonOperator):
     def execute(self, context):
         from arxiv_downloader import query_arxiv_keywords, serialize
         keywords = context['ti'].xcom_pull(task_ids='get_keywords_task')
+        print(keywords)
         kw_results = query_arxiv_keywords(keywords)
         serialized_results = serialize(kw_results)
         context['ti'].xcom_push(key='kw_results', value=serialized_results)
         return serialized_results
 
 
+class CrossrefDownloadOperator(PythonOperator):
+    def __init__(self, *args, **kwargs):
+        super().__init__(python_callable=self.execute, *args, **kwargs)
+
+    def execute(self, context):
+        from crossref_dl import get_crossref_results
+        crossref_results = get_crossref_results()
+        context['ti'].xcom_push(key='crossref_results', value=crossref_results)
+        return crossref_results
+
+
+class CrossrefTopResultsOperator(PythonOperator):
+    def __init__(self, *args, **kwargs):
+        super().__init__(python_callable=self.execute, *args, **kwargs)
+
+    def execute(self, context):
+        from crossref_dl import get_top_articles
+        crossref_results = context['ti'].xcom_pull(task_ids='crossref_download_task')
+        crossref_top_results = get_top_articles(crossref_results)
+
+        context['ti'].xcom_push(key='crossref_top_results', value=crossref_results)
+        return crossref_results
+
+
 with DAG(
         default_args=default_args,
-        dag_id='dv47',
+        dag_id='dv57',
         description='Our first dag using python operator',
         start_date=datetime(2023, 6, 7),
         schedule='@once'
@@ -92,6 +117,20 @@ with DAG(
         task_id='arxiv_download_keywords_metadata',
         dag=dag
     )
+    crossref_download_task = CrossrefDownloadOperator(
+        task_id='crossref_download_task',
+        dag=dag
+    )
+    crossref_get_top_results_task = CrossrefTopResultsOperator(
+        task_id='crossref_get_top_results_task',
+        dag=dag
+    )
 
-    op_create_directories >> [arxiv_download_task, springer_download_task] >> \
+    # op_create_directories >> [arxiv_download_task, springer_download_task, crossref_download_task] >> \
+    # get_keywords_task >> arxiv_download_keywords_metadata >> crossref_get_top_results_task
+
+    op_create_directories >> [arxiv_download_task, springer_download_task, crossref_download_task]
+    springer_download_task >> get_keywords_task
     get_keywords_task >> arxiv_download_keywords_metadata
+    [arxiv_download_task, springer_download_task] >> arxiv_download_keywords_metadata
+    crossref_download_task >> crossref_get_top_results_task

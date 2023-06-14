@@ -96,15 +96,16 @@ def get_crossref_results(query=params['query'], max_results=params['crossref']['
     return results
 
 
-def get_top_articles(top_n=params['crossref']['top_n'],
+def get_top_articles(articles, top_n=params['crossref']['top_n'],
                      input_file=params['crossref']['path'],
                      output_file=params['crossref']['top_path']):
-
-    with open(input_file, 'r') as f:
-        articles = json.load(f)
+    # with open(input_file, 'r') as f:
+    #     articles = json.load(f)
 
     sorted_articles = sorted(articles, key=lambda x: x['citation_count'], reverse=True)
     top_articles = sorted_articles[:top_n]
 
     with open(output_file, 'w', encoding='utf-8') as f:
         json.dump(top_articles, f, ensure_ascii=False, indent=4)
+
+    return top_articles
