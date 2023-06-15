@@ -4,13 +4,23 @@ import datetime
 from collections import Counter
 from textwrap import wrap
 import textwrap
-import pandas as pd
+from constants import params
 
-import json
 
-def create_wordcloud(data):
+
+def create_visualizations(springer_data, arxiv_data, crossref_data, query_name=params['query']):
+    create_wordcloud(springer_data)
+    plot_articles_by_year(arxiv_data, query_name)
+    visualize_openaccess_ratio(springer_data)
+    scatter_plot_citations(crossref_data)
+    plot_subjects(springer_data, query_name)
+    plot_publishers(crossref_data, query_name)
+    plot_journals(crossref_data, query_name)
+
+
+def create_wordcloud(springer_data):
     # create a list of all the keywords
-    all_keywords = [keyword for file in data if 'keyword' in file for keyword in file['keyword']]
+    all_keywords = [keyword for file in springer_data if 'keyword' in file for keyword in file['keyword']]
 
     # join all the keywords into a single string
     all_keywords_str = ' '.join(all_keywords)
@@ -20,7 +30,7 @@ def create_wordcloud(data):
 
     # plot the word cloud
 
-    #plt.figure(figsize=(12, 6))
+    # plt.figure(figsize=(12, 6))
     fig, ax = plt.subplots(figsize=(12, 6))
     plt.imshow(wordcloud, interpolation='bilinear')
     plt.axis('off')
@@ -29,9 +39,14 @@ def create_wordcloud(data):
     plt.show()
 
 
-def plot_articles_by_year(data, query_name):
-    selection_size = len(data)
-    years = [datetime.datetime.strptime(str(result['published']), '%Y-%m-%d %H:%M:%S%z').year for result in data]
+def plot_articles_by_year(arxiv_data, query_name):
+    selection_size = len(arxiv_data)
+    try:
+        years = [datetime.datetime.strptime(str(result['published']), '%Y-%m-%d %H:%M:%S%z').year for result in
+                 arxiv_data]
+    except:
+        years = [datetime.datetime.strptime(str(result['published']), '%Y-%m-%dT%H:%M:%S%z').year for result in
+                 arxiv_data]
 
     # create the figure and axes for the plot
     fig, ax = plt.subplots()
@@ -57,7 +72,9 @@ def plot_articles_by_year(data, query_name):
     plt.show()
 
 
-def visualize_openaccess_ratio(data):
+
+
+def visualize_openaccess_ratio(springer_data):
     """
     Visualizes the ratio between openaccess true and false papers in a list of dictionaries using matplotlib.
 
@@ -65,12 +82,12 @@ def visualize_openaccess_ratio(data):
     data (list): A list of dictionaries representing papers, each with an 'openaccess' key indicating whether the paper is open access or not.
     """
     # Calculate the number of openaccess true and false papers
-    num_true = sum(d['openaccess'] == 'true' for d in data)
-    num_false = len(data) - num_true
+    num_true = sum(d['openaccess'] == 'true' for d in springer_data)
+    num_false = len(springer_data) - num_true
 
     # Calculate the percentage of openaccess true and false papers
-    pct_true = num_true / len(data) * 100
-    pct_false = num_false / len(data) * 100
+    pct_true = num_true / len(springer_data) * 100
+    pct_false = num_false / len(springer_data) * 100
 
     # Create a pie chart to visualize the ratio
     labels = [f"Open Access True ({num_true})", f"Open Access False ({num_false})"]
@@ -86,10 +103,10 @@ def visualize_openaccess_ratio(data):
     plt.show()
 
 
-def scatter_plot_citations(data):
+def scatter_plot_citations(crossref_data):
     years = []
     citations = []
-    for item in data:
+    for item in crossref_data:
         year = item['published_date']
         citation = item['citation_count']
         if year != "N/A" and citation != "N/A":
@@ -110,12 +127,19 @@ def scatter_plot_citations(data):
     plt.show()
 
 
-
-def plot_subjects(data, n, query_name):
-    selection_size = len(data)
+def plot_subjects(springer_data, query_name, n=10):
+    selection_size = len(springer_data)
     subjects = []
-    for d in data:
-        subjects += d['subjects']
+    for d in springer_data:
+        try:
+            subjects += d['subjects']
+        except KeyError:
+            # handle empty 'subjects' list
+            pass
+    if not subjects:
+        # stop execution of the function if 'subjects' is empty
+        print('No subjects found in data')
+        return
     subject_counts = Counter(subjects)
     top_subjects = subject_counts.most_common(n)[::-1]  # Reverse order
     labels, values = zip(*top_subjects)
@@ -139,14 +163,15 @@ def plot_subjects(data, n, query_name):
     fig.savefig('./output/visualizations/subjects.png')
     plt.show()
 
-def plot_publishers(data, query_name, n=10):
-    selection_size = len(data)
+
+def plot_publishers(crossref_data, query_name, n=10):
+    selection_size = len(crossref_data)
     publishers = []
-    for d in data:
+    for d in crossref_data:
         if 'publisher' in d:
             publishers.append(d['publisher'])
     publisher_counts = Counter(publishers)
-    top_publishers = publisher_counts.most_common(n)[::-1] # Reverse order
+    top_publishers = publisher_counts.most_common(n)[::-1]  # Reverse order
     labels, values = zip(*top_publishers)
 
     # Wrap the publisher labels
@@ -171,14 +196,15 @@ def plot_publishers(data, query_name, n=10):
     fig.savefig('./output/visualizations/publishers.png')
     plt.show()
 
-def plot_journals(data, query_name, n=10):
-    selection_size = len(data)
+
+def plot_journals(crossref_data, query_name, n=10):
+    selection_size = len(crossref_data)
     journals = []
-    for d in data:
+    for d in crossref_data:
         if 'journal_name' in d:
             journals.append(d['journal_name'])
     journal_counts = Counter(journals)
-    top_journals = journal_counts.most_common(n)[::-1] # Reverse order
+    top_journals = journal_counts.most_common(n)[::-1]  # Reverse order
     labels, values = zip(*top_journals)
 
     # Wrap the journal labels

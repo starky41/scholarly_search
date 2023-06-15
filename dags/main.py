@@ -1,77 +1,31 @@
-from pathlib import Path
-
+from constants import params
+from visualization import create_visualizations
+from paths import create_directories
+from kw_extraction import extract_keywords
 import database
-import arxiv_dl
 import springer_dl
-import visualization
-
 import crossref_dl
-
-metadata_path = './output/metadata'
-
-params = {
-    'query': 'Natural language processing',
-    'springer': {
-        'max_metadata': 100,
-        'max_pdfs': 1,
-        'num_kw': 0,
-        'path': metadata_path + '/springer.json',
-    },
-    'arxiv': {
-        'main': {'max_metadata': 100, 'max_pdfs': 0},
-        'kw': {'max_metadata': 100, 'max_pdfs': 0},
-        'path': metadata_path + '/arxiv.json',
-    },
-    'crossref': {
-        'max_metadata': 100,  # limited by 1000.
-        'top_n': 10,
-        'path': metadata_path + '/crossref.json',
-        'top_path': metadata_path + '/crossref_top.json',
-    }
-}
+from arxiv_downloader import search_and_download_arxiv_papers, query_arxiv_keywords
 
 
 def main():
-    Path('./output/metadata').mkdir(parents=True, exist_ok=True)
-    Path('./output/visualizations').mkdir(parents=True, exist_ok=True)
+    create_directories()
 
-    query = params['query']
-
-    springer_results = springer_dl.get_springer_results(query,
-                                                        results_to_get=params['springer']['max_metadata'])
-
-
-    springer_dl.download_articles(springer_results,
-                                  params['springer']['max_pdfs'])
-
-    keywords = springer_dl.find_keywords(query,
-                                         springer_results,
-                                         max_kw=params['springer']['num_kw'])
+    springer_results = springer_dl.get_springer_results(download=True)
+    keywords = springer_dl.find_keywords(springer_results)
     print(keywords)
-    arxiv_results = arxiv_dl.get_arxiv_results(query,
-                                               max_results=params['arxiv']['main']['max_metadata'],
-                                               num_pdf_downloads=params['arxiv']['main']['max_pdfs'])
 
+    arxiv_results = search_and_download_arxiv_papers()
+    kw_results = query_arxiv_keywords(keywords)
 
-    kw_results = arxiv_dl.get_kw_results(
-        keywords,
-        num_metadata=params['arxiv']['kw']['max_metadata'],
-        num_pdf_downloads=params['arxiv']['kw']['max_pdfs'],
-        main_query=params['query']
-    )
-    crossref_results = crossref_dl.get_crossref_results(params['query'], max_results=params['crossref']['max_metadata'])
-    crossref_dl.get_top_articles(input_file=params['crossref']['path'], top_n=params['crossref']['top_n'],
-                                 output_file=params['crossref']['top_path'])
-    visualization.plot_articles_by_year(arxiv_results, query)
-    visualization.create_wordcloud(springer_results)
-    visualization.visualize_openaccess_ratio(springer_results)
-    visualization.plot_subjects(springer_results, 10, query)
-    visualization.scatter_plot_citations(crossref_results)
-    visualization.plot_publishers(crossref_results, query_name=query)
-    visualization.plot_journals(crossref_results, query_name=query)
+    crossref_results = crossref_dl.get_crossref_results()
+    crossref_dl.get_top_articles(crossref_results)
 
-    database.add_record(name=query,
-                        springer_data=springer_results,
+    create_visualizations(springer_results, arxiv_results, crossref_results)
+
+    arxiv_results = extract_keywords(arxiv_results)
+
+    database.add_record(springer_data=springer_results,
                         arxiv_data=arxiv_results,
                         crossref_data=crossref_results,
                         kw_data=kw_results)

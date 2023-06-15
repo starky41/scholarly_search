@@ -1,102 +1,214 @@
-from datetime import datetime, timedelta
+from datetime import timedelta
 from airflow import DAG
 from airflow.operators.python import PythonOperator
-
+from datetime import datetime
+import json
 
 default_args = {
     'owner': 'starky',
     'retries': 5,
-    'retry_delay': timedelta(minutes=5)
+    'retry_delay': timedelta(minutes=5),
+    'executor': 'LocalExecutor',
 }
 
 
+def create_directories():
+    from paths import create_directories
+    create_directories()
 
 
-def greet():
+class SpringerDownloadMetadataOperator(PythonOperator):
+    def __init__(self, *args, **kwargs):
+        super().__init__(python_callable=self.execute, *args, **kwargs)
 
-    from pathlib import Path
-    import pymongo
-    import database
-    import arxiv_dl
-    import springer_dl
-    import visualization
+    def execute(self, context):
+        import springer_dl
+        springer_results = springer_dl.get_springer_results()
+        context['ti'].xcom_push(key='springer_results', value=springer_results)
+        return springer_results
 
-    import crossref_dl
 
-    metadata_path = './output/metadata'
+class SpringerDownloadPdfFilesOperator(PythonOperator):
+    def __init__(self, *args, **kwargs):
+        super().__init__(python_callable=self.execute, *args, **kwargs)
 
-    params = {
-        'query': 'Natural language processing',
-        'springer': {
-            'max_metadata': 100,
-            'max_pdfs': 1,
-            'num_kw': 0,
-            'path': metadata_path + '/springer.json',
-        },
-        'arxiv': {
-            'main': {'max_metadata': 100, 'max_pdfs': 0},
-            'kw': {'max_metadata': 100, 'max_pdfs': 0},
-            'path': metadata_path + '/arxiv.json',
-        },
-        'crossref': {
-            'max_metadata': 100,  # limited by 1000.
-            'top_n': 10,
-            'path': metadata_path + '/crossref.json',
-            'top_path': metadata_path + '/crossref_top.json',
-        }
-    }
+    def execute(self, context):
+        from springer_dl import download_papers
+        springer_results = context['ti'].xcom_pull(task_ids='springer_download_metadata_task')
+        download_papers(springer_results)
 
-    Path('./output/metadata').mkdir(parents=True, exist_ok=True)
 
-    query = params['query']
+class GetKeywordsOperator(PythonOperator):
+    def __init__(self, *args, **kwargs):
+        super().__init__(python_callable=self.execute, *args, **kwargs)
 
-    springer_results = springer_dl.get_springer_results(query,
-                                                        results_to_get=params['springer']['max_metadata'])
-    visualization.create_wordcloud(springer_results)
-    visualization.visualize_openaccess_ratio(springer_results)
-    visualization.plot_subjects(springer_results, 10, query)
+    def execute(self, context):
+        import springer_dl
+        springer_results = context['ti'].xcom_pull(task_ids='springer_download_metadata_task')
+        keywords = springer_dl.find_keywords(springer_results)
+        print(keywords)
 
-    springer_dl.download_articles(springer_results,
-                                  params['springer']['max_pdfs'])
+        return keywords
 
-    keywords = springer_dl.find_keywords(query,
-                                         springer_results,
-                                         max_kw=params['springer']['num_kw'])
-    print(keywords)
-    arxiv_results = arxiv_dl.get_arxiv_results(query,
-                                               max_results=params['arxiv']['main']['max_metadata'],
-                                               num_pdf_downloads=params['arxiv']['main']['max_pdfs'])
 
-    visualization.plot_articles_by_year(arxiv_results, query)
-    kw_results = arxiv_dl.get_kw_results(
-        keywords,
-        num_metadata=params['arxiv']['kw']['max_metadata'],
-        num_pdf_downloads=params['arxiv']['kw']['max_pdfs'],
-        main_query=params['query']
-    )
-    crossref_results = crossref_dl.get_crossref_results(params['query'], max_results=params['crossref']['max_metadata'])
-    crossref_dl.get_top_articles(input_file=params['crossref']['path'], top_n=params['crossref']['top_n'],
-                                 output_file=params['crossref']['top_path'])
-    visualization.scatter_plot_citations(crossref_results)
-    visualization.plot_publishers(crossref_results, query_name=query)
-    visualization.plot_journals(crossref_results, query_name=query)
-    visualization.plot_publications_by_publisher(crossref_results)
-    database.add_record(name=query,
-                        springer_data=springer_results,
-                        arxiv_data=arxiv_results,
-                        crossref_data=crossref_results,
-                        kw_data=kw_results)
+class ArxivDownloadOperator(PythonOperator):
+    def __init__(self, *args, **kwargs):
+        super().__init__(python_callable=self.execute, *args, **kwargs)
+
+    def execute(self, context):
+        from arxiv_downloader import serialize, search_and_download_arxiv_papers
+        arxiv_results = search_and_download_arxiv_papers(save_to_json=False)
+        serialized_results = serialize(arxiv_results)
+
+        context['ti'].xcom_push(key='arxiv_results', value=serialized_results)
+
+        return serialized_results
+
+
+class ArxivDownloadKeywordsMetadataOperator(PythonOperator):
+    def __init__(self, *args, **kwargs):
+        super().__init__(python_callable=self.execute, *args, **kwargs)
+
+    def execute(self, context):
+        from arxiv_downloader import query_arxiv_keywords, serialize
+        keywords = context['ti'].xcom_pull(task_ids='get_keywords_task')
+        print(keywords)
+        kw_results = query_arxiv_keywords(keywords)
+        serialized_results = serialize(kw_results)
+        context['ti'].xcom_push(key='kw_results', value=serialized_results)
+        return serialized_results
+
+
+class CrossrefDownloadOperator(PythonOperator):
+    def __init__(self, *args, **kwargs):
+        super().__init__(python_callable=self.execute, *args, **kwargs)
+
+    def execute(self, context):
+        from crossref_dl import get_crossref_results
+        crossref_results = get_crossref_results()
+        context['ti'].xcom_push(key='crossref_results', value=crossref_results)
+        return crossref_results
+
+
+class CrossrefTopResultsOperator(PythonOperator):
+    def __init__(self, *args, **kwargs):
+        super().__init__(python_callable=self.execute, *args, **kwargs)
+
+    def execute(self, context):
+        from crossref_dl import get_top_articles
+        crossref_results = context['ti'].xcom_pull(task_ids='crossref_download_task')
+        crossref_top_results = get_top_articles(crossref_results)
+
+        context['ti'].xcom_push(key='crossref_top_results', value=crossref_top_results)
+        return crossref_results
+
+
+class CreateVisualisationsOperator(PythonOperator):
+    def __init__(self, *args, **kwargs):
+        super().__init__(python_callable=self.execute, *args, **kwargs)
+
+    def execute(self, context):
+        from visualization import create_visualizations
+        import json
+        springer_results = context['ti'].xcom_pull(task_ids='springer_download_metadata_task')
+        crossref_results = context['ti'].xcom_pull(task_ids='crossref_download_task')
+
+        serialized_arxiv_results = context['ti'].xcom_pull(task_ids='arxiv_download_task')
+        arxiv_results = json.loads(serialized_arxiv_results)
+        create_visualizations(springer_results, arxiv_results, crossref_results)
+
+
+class KeywordExtractionOperator(PythonOperator):
+    def __init__(self, *args, **kwargs):
+        super().__init__(python_callable=self.execute, *args, **kwargs)
+
+    def execute(self, context):
+        import json
+        from kw_extraction import extract_keywords
+        from arxiv_downloader import serialize
+        serialized_arxiv_results = context['ti'].xcom_pull(task_ids='arxiv_download_task')
+        arxiv_results = json.loads(serialized_arxiv_results)
+        arxiv_results_with_keywords = extract_keywords(arxiv_results)
+        arxiv_results_with_keywords = serialize(arxiv_results_with_keywords)
+        context['ti'].xcom_push(key='arxiv_results_with_keywords', value=arxiv_results_with_keywords)
+        return arxiv_results_with_keywords
+
+
+class DatabaseAddRecordOperator(PythonOperator):
+
+    def __init__(self, *args, **kwargs):
+        super().__init__(python_callable=self.execute, *args, **kwargs)
+
+    def execute(self, context):
+        import database
+        springer_results = context['ti'].xcom_pull(task_ids='springer_download_metadata_task')
+        serialized_arxiv_results = context['ti'].xcom_pull(task_ids='extract_keywords_task')
+        arxiv_results = json.loads(serialized_arxiv_results)
+        crossref_results = context['ti'].xcom_pull(task_ids='crossref_download_task')
+        serialized_kw_data = context['ti'].xcom_pull(task_ids='arxiv_download_keywords_metadata')
+        kw_data = json.loads(serialized_kw_data)
+        database.add_record(springer_results, arxiv_results, crossref_results, kw_data)
 
 
 with DAG(
         default_args=default_args,
-        dag_id='my_dag',
+        dag_id='v67',
         description='Our first dag using python operator',
-        start_date=datetime(2023, 4, 7),
-        schedule='@daily'
+        start_date=datetime(2023, 6, 7),
+        schedule='@once'
+
 ) as dag:
-    task1 = PythonOperator(
-        task_id='greet',
-        python_callable=greet
+    op_create_directories = PythonOperator(task_id='create_directories', python_callable=create_directories)
+    springer_download_metadata_task = SpringerDownloadMetadataOperator(
+        task_id='springer_download_metadata_task',
+        dag=dag
     )
-    task1
+    springer_download_pdfs_task = SpringerDownloadPdfFilesOperator(
+        task_id='springer_download_pdfs_task',
+        dag=dag
+    )
+    get_keywords_task = GetKeywordsOperator(
+        task_id='get_keywords_task',
+        dag=dag
+    )
+    arxiv_download_task = ArxivDownloadOperator(
+        task_id='arxiv_download_task',
+        dag=dag
+    )
+    arxiv_download_keywords_metadata = ArxivDownloadKeywordsMetadataOperator(
+        task_id='arxiv_download_keywords_metadata',
+        dag=dag
+    )
+    crossref_download_task = CrossrefDownloadOperator(
+        task_id='crossref_download_task',
+        dag=dag
+    )
+    crossref_get_top_results_task = CrossrefTopResultsOperator(
+        task_id='crossref_get_top_results_task',
+        dag=dag
+    )
+    create_visualizations_task = CreateVisualisationsOperator(
+        task_id='create_visualizations_task',
+        dag=dag
+    )
+    extract_keywords_task = KeywordExtractionOperator(
+        task_id='extract_keywords_task',
+        dag=dag
+    )
+    database_add_record_task = DatabaseAddRecordOperator(
+        task_id='database_add_record_task',
+        dag=dag
+    )
+
+    # op_create_directories >> [arxiv_download_task, springer_download_task, crossref_download_task] >> \
+    # get_keywords_task >> arxiv_download_keywords_metadata >> crossref_get_top_results_task
+
+    op_create_directories >> [arxiv_download_task, springer_download_metadata_task, crossref_download_task]
+    springer_download_metadata_task >> get_keywords_task
+    springer_download_metadata_task >> springer_download_pdfs_task
+    get_keywords_task >> arxiv_download_keywords_metadata
+    [arxiv_download_task, springer_download_metadata_task] >> arxiv_download_keywords_metadata
+    crossref_download_task >> crossref_get_top_results_task
+    [arxiv_download_task, crossref_download_task, springer_download_metadata_task] >> create_visualizations_task
+    arxiv_download_task >> extract_keywords_task
+    arxiv_download_keywords_metadata >> database_add_record_task
