@@ -11,7 +11,7 @@ from arxiv_downloader import search_and_download_arxiv_papers, query_arxiv_keywo
 def main():
     create_directories()
 
-    springer_results = springer_dl.get_springer_results()
+    springer_results = springer_dl.get_springer_results(download=True)
     keywords = springer_dl.find_keywords(springer_results)
     print(keywords)
 

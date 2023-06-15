@@ -2,6 +2,7 @@ from datetime import timedelta
 from airflow import DAG
 from airflow.operators.python import PythonOperator
 from datetime import datetime
+import json
 
 default_args = {
     'owner': 'starky',
@@ -16,7 +17,7 @@ def create_directories():
     create_directories()
 
 
-class SpringerDownloadOperator(PythonOperator):
+class SpringerDownloadMetadataOperator(PythonOperator):
     def __init__(self, *args, **kwargs):
         super().__init__(python_callable=self.execute, *args, **kwargs)
 
@@ -27,13 +28,23 @@ class SpringerDownloadOperator(PythonOperator):
         return springer_results
 
 
+class SpringerDownloadPdfFilesOperator(PythonOperator):
+    def __init__(self, *args, **kwargs):
+        super().__init__(python_callable=self.execute, *args, **kwargs)
+
+    def execute(self, context):
+        from springer_dl import download_papers
+        springer_results = context['ti'].xcom_pull(task_ids='springer_download_metadata_task')
+        download_papers(springer_results)
+
+
 class GetKeywordsOperator(PythonOperator):
     def __init__(self, *args, **kwargs):
         super().__init__(python_callable=self.execute, *args, **kwargs)
 
     def execute(self, context):
         import springer_dl
-        springer_results = context['ti'].xcom_pull(task_ids='springer_download_task')
+        springer_results = context['ti'].xcom_pull(task_ids='springer_download_metadata_task')
         keywords = springer_dl.find_keywords(springer_results)
         print(keywords)
 
@@ -99,7 +110,7 @@ class CreateVisualisationsOperator(PythonOperator):
     def execute(self, context):
         from visualization import create_visualizations
         import json
-        springer_results = context['ti'].xcom_pull(task_ids='springer_download_task')
+        springer_results = context['ti'].xcom_pull(task_ids='springer_download_metadata_task')
         crossref_results = context['ti'].xcom_pull(task_ids='crossref_download_task')
 
         serialized_arxiv_results = context['ti'].xcom_pull(task_ids='arxiv_download_task')
@@ -114,23 +125,46 @@ class KeywordExtractionOperator(PythonOperator):
     def execute(self, context):
         import json
         from kw_extraction import extract_keywords
+        from arxiv_downloader import serialize
         serialized_arxiv_results = context['ti'].xcom_pull(task_ids='arxiv_download_task')
         arxiv_results = json.loads(serialized_arxiv_results)
+        arxiv_results_with_keywords = extract_keywords(arxiv_results)
+        arxiv_results_with_keywords = serialize(arxiv_results_with_keywords)
+        context['ti'].xcom_push(key='arxiv_results_with_keywords', value=arxiv_results_with_keywords)
+        return arxiv_results_with_keywords
 
-        extract_keywords(arxiv_results)
+
+class DatabaseAddRecordOperator(PythonOperator):
+
+    def __init__(self, *args, **kwargs):
+        super().__init__(python_callable=self.execute, *args, **kwargs)
+
+    def execute(self, context):
+        import database
+        springer_results = context['ti'].xcom_pull(task_ids='springer_download_metadata_task')
+        serialized_arxiv_results = context['ti'].xcom_pull(task_ids='extract_keywords_task')
+        arxiv_results = json.loads(serialized_arxiv_results)
+        crossref_results = context['ti'].xcom_pull(task_ids='crossref_download_task')
+        serialized_kw_data = context['ti'].xcom_pull(task_ids='arxiv_download_keywords_metadata')
+        kw_data = json.loads(serialized_kw_data)
+        database.add_record(springer_results, arxiv_results, crossref_results, kw_data)
 
 
 with DAG(
         default_args=default_args,
-        dag_id='dv64',
+        dag_id='v67',
         description='Our first dag using python operator',
         start_date=datetime(2023, 6, 7),
         schedule='@once'
 
 ) as dag:
     op_create_directories = PythonOperator(task_id='create_directories', python_callable=create_directories)
-    springer_download_task = SpringerDownloadOperator(
-        task_id='springer_download_task',
+    springer_download_metadata_task = SpringerDownloadMetadataOperator(
+        task_id='springer_download_metadata_task',
+        dag=dag
+    )
+    springer_download_pdfs_task = SpringerDownloadPdfFilesOperator(
+        task_id='springer_download_pdfs_task',
         dag=dag
     )
     get_keywords_task = GetKeywordsOperator(
@@ -161,14 +195,20 @@ with DAG(
         task_id='extract_keywords_task',
         dag=dag
     )
+    database_add_record_task = DatabaseAddRecordOperator(
+        task_id='database_add_record_task',
+        dag=dag
+    )
 
     # op_create_directories >> [arxiv_download_task, springer_download_task, crossref_download_task] >> \
     # get_keywords_task >> arxiv_download_keywords_metadata >> crossref_get_top_results_task
 
-    op_create_directories >> [arxiv_download_task, springer_download_task, crossref_download_task]
-    springer_download_task >> get_keywords_task
+    op_create_directories >> [arxiv_download_task, springer_download_metadata_task, crossref_download_task]
+    springer_download_metadata_task >> get_keywords_task
+    springer_download_metadata_task >> springer_download_pdfs_task
     get_keywords_task >> arxiv_download_keywords_metadata
-    [arxiv_download_task, springer_download_task] >> arxiv_download_keywords_metadata
+    [arxiv_download_task, springer_download_metadata_task] >> arxiv_download_keywords_metadata
     crossref_download_task >> crossref_get_top_results_task
-    [arxiv_download_task, crossref_download_task, springer_download_task] >> create_visualizations_task
+    [arxiv_download_task, crossref_download_task, springer_download_metadata_task] >> create_visualizations_task
     arxiv_download_task >> extract_keywords_task
+    arxiv_download_keywords_metadata >> database_add_record_task

@@ -17,13 +17,14 @@ springer_params = params['springer']
 
 
 def get_springer_results(query=params['query'], metadata_to_download=springer_params['max_metadata'],
-                         pdfs_to_download=springer_params['max_pdfs']):
+                         pdfs_to_download=springer_params['max_pdfs'], download=False):
     create_query(query)
     results = springer_find(metadata_to_download, query)
     with open(metadata_paths['springer'], 'w', encoding='utf-8') as f:
         json.dump(results, f, ensure_ascii=False, indent=4)
 
-    download_papers(results, pdfs_to_download)
+    if download:
+        download_papers(results, pdfs_to_download)
     return results
 
 
@@ -75,7 +76,7 @@ def find_keywords(results, query=params['query'], max_kw=springer_params['num_kw
     return keywords
 
 
-def download_papers(articles, num_articles):
+def download_papers(articles, num_articles=params['springer']['max_pdfs']):
     folder_name = paper_paths['springer']
     count = 0
     for article in articles:
