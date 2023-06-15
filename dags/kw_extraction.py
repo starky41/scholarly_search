@@ -1,14 +1,19 @@
 import numpy as np
-from sklearn.feature_extraction.text import TfidfVectorizer
 import json
+from datetime import datetime
+from sklearn.feature_extraction.text import TfidfVectorizer
+from arxiv_downloader import dump_to_json
 
 
-def extract_keywords():
-    # Load the metadata into a pandas dataframe
-    json_path = "output/metadata/arxiv.json"
+# Custom JSON encoder that can handle datetime objects
+class CustomJSONEncoder(json.JSONEncoder):
+    def default(self, obj):
+        if isinstance(obj, datetime):
+            return obj.strftime("%Y-%m-%d %H:%M:%S")
+        return json.JSONEncoder.default(self, obj)
 
-    with open(json_path, encoding='utf-8') as f:
-        metadata = json.load(f)
+
+def extract_keywords(metadata):
 
     # Extract the text data
     text_data = []
@@ -33,16 +38,16 @@ def extract_keywords():
     # Get the feature names (top 10 key phrases)
     feature_phrases = vectorizer.get_feature_names_out()
 
-
     # Add cluster names to metadata
     for i, doc in enumerate(metadata):
         doc['tf_idf'] = {}
         doc['tf_idf']['keywords'] = [feature_names[idx] for idx in tfidf[i].indices]
         doc['tf_idf']['key_phrases'] = [feature_phrases[idx] for idx in tfidf_phrases[i].indices]
 
-    metadata = json.loads(json.dumps(metadata, default=lambda o: int(o) if isinstance(o, np.int32) else o))
+    # Serialize with custom JSON encoder
+    metadata = json.loads(json.dumps(metadata, cls=CustomJSONEncoder))
+
     # Save the updated metadata JSON file
-    with open(json_path, 'w', encoding='utf-8') as f:
-        json.dump(metadata, f, ensure_ascii=False, indent=4)
+    dump_to_json(metadata)
 
     return metadata

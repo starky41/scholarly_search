@@ -4,10 +4,8 @@ import datetime
 from collections import Counter
 from textwrap import wrap
 import textwrap
-import database
-import io
-import json
 from constants import params
+
 
 
 def create_visualizations(springer_data, arxiv_data, crossref_data, query_name=params['query']):
@@ -43,8 +41,12 @@ def create_wordcloud(springer_data):
 
 def plot_articles_by_year(arxiv_data, query_name):
     selection_size = len(arxiv_data)
-    years = [datetime.datetime.strptime(str(result['published']), '%Y-%m-%d %H:%M:%S%z').year for result in
-             arxiv_data]
+    try:
+        years = [datetime.datetime.strptime(str(result['published']), '%Y-%m-%d %H:%M:%S%z').year for result in
+                 arxiv_data]
+    except:
+        years = [datetime.datetime.strptime(str(result['published']), '%Y-%m-%dT%H:%M:%S%z').year for result in
+                 arxiv_data]
 
     # create the figure and axes for the plot
     fig, ax = plt.subplots()
@@ -68,6 +70,8 @@ def plot_articles_by_year(arxiv_data, query_name):
 
     # show the plot
     plt.show()
+
+
 
 
 def visualize_openaccess_ratio(springer_data):

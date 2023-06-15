@@ -23,7 +23,7 @@ def main():
 
     create_visualizations(springer_results, arxiv_results, crossref_results)
 
-    arxiv_results = extract_keywords()
+    arxiv_results = extract_keywords(arxiv_results)
 
     database.add_record(springer_data=springer_results,
                         arxiv_data=arxiv_results,

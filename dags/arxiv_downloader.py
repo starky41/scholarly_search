@@ -1,6 +1,4 @@
 from paths import metadata_paths, paper_paths
-import os
-import constants
 import arxiv
 import json
 from datetime import datetime
