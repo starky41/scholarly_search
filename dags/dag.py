@@ -51,18 +51,28 @@ class GetKeywordsOperator(PythonOperator):
         return keywords
 
 
-class ArxivDownloadOperator(PythonOperator):
+class ArxivDownloadMetadataOperator(PythonOperator):
     def __init__(self, *args, **kwargs):
         super().__init__(python_callable=self.execute, *args, **kwargs)
 
     def execute(self, context):
         from arxiv_downloader import serialize, search_and_download_arxiv_papers
-        arxiv_results = search_and_download_arxiv_papers(save_to_json=False)
+        arxiv_results = search_and_download_arxiv_papers(save_to_json=False, download_files=False)
         serialized_results = serialize(arxiv_results)
 
         context['ti'].xcom_push(key='arxiv_results', value=serialized_results)
 
         return serialized_results
+
+
+class ArxivDownloadPdfFilesOperator(PythonOperator):
+    def __init__(self, *args, **kwargs):
+        super().__init__(python_callable=self.execute, *args, **kwargs)
+
+    def execute(self, context):
+        from arxiv_downloader import download_pdf_files, query_arxiv
+        search = query_arxiv()
+        download_pdf_files(search)
 
 
 class ArxivDownloadKeywordsMetadataOperator(PythonOperator):
@@ -113,7 +123,7 @@ class CreateVisualisationsOperator(PythonOperator):
         springer_results = context['ti'].xcom_pull(task_ids='springer_download_metadata_task')
         crossref_results = context['ti'].xcom_pull(task_ids='crossref_download_task')
 
-        serialized_arxiv_results = context['ti'].xcom_pull(task_ids='arxiv_download_task')
+        serialized_arxiv_results = context['ti'].xcom_pull(task_ids='arxiv_download_metadata_task')
         arxiv_results = json.loads(serialized_arxiv_results)
         create_visualizations(springer_results, arxiv_results, crossref_results)
 
@@ -126,7 +136,7 @@ class KeywordExtractionOperator(PythonOperator):
         import json
         from kw_extraction import extract_keywords
         from arxiv_downloader import serialize
-        serialized_arxiv_results = context['ti'].xcom_pull(task_ids='arxiv_download_task')
+        serialized_arxiv_results = context['ti'].xcom_pull(task_ids='arxiv_download_metadata_task')
         arxiv_results = json.loads(serialized_arxiv_results)
         arxiv_results_with_keywords = extract_keywords(arxiv_results)
         arxiv_results_with_keywords = serialize(arxiv_results_with_keywords)
@@ -152,7 +162,7 @@ class DatabaseAddRecordOperator(PythonOperator):
 
 with DAG(
         default_args=default_args,
-        dag_id='v67',
+        dag_id='v66',
         description='Our first dag using python operator',
         start_date=datetime(2023, 6, 7),
         schedule='@once'
@@ -171,8 +181,12 @@ with DAG(
         task_id='get_keywords_task',
         dag=dag
     )
-    arxiv_download_task = ArxivDownloadOperator(
-        task_id='arxiv_download_task',
+    arxiv_download_metadata_task = ArxivDownloadMetadataOperator(
+        task_id='arxiv_download_metadata_task',
+        dag=dag
+    )
+    arxiv_download_pdf_files_task = ArxivDownloadPdfFilesOperator(
+        task_id='arxiv_download_pdfs_task',
         dag=dag
     )
     arxiv_download_keywords_metadata = ArxivDownloadKeywordsMetadataOperator(
@@ -200,15 +214,13 @@ with DAG(
         dag=dag
     )
 
-    # op_create_directories >> [arxiv_download_task, springer_download_task, crossref_download_task] >> \
-    # get_keywords_task >> arxiv_download_keywords_metadata >> crossref_get_top_results_task
-
-    op_create_directories >> [arxiv_download_task, springer_download_metadata_task, crossref_download_task]
+    op_create_directories >> [arxiv_download_metadata_task, springer_download_metadata_task, crossref_download_task]
     springer_download_metadata_task >> get_keywords_task
     springer_download_metadata_task >> springer_download_pdfs_task
     get_keywords_task >> arxiv_download_keywords_metadata
-    [arxiv_download_task, springer_download_metadata_task] >> arxiv_download_keywords_metadata
+    [arxiv_download_metadata_task, springer_download_metadata_task] >> arxiv_download_keywords_metadata
     crossref_download_task >> crossref_get_top_results_task
-    [arxiv_download_task, crossref_download_task, springer_download_metadata_task] >> create_visualizations_task
-    arxiv_download_task >> extract_keywords_task
+    [arxiv_download_metadata_task, crossref_download_task, springer_download_metadata_task] >> create_visualizations_task
+    arxiv_download_metadata_task >> extract_keywords_task
     arxiv_download_keywords_metadata >> database_add_record_task
+    arxiv_download_metadata_task >> arxiv_download_pdf_files_task

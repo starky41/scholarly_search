@@ -10,7 +10,7 @@ from time import sleep
 ARXIV_METADATA_OUTPUT = metadata_paths['arxiv']
 
 
-def query_arxiv(search_term, num_metadata_to_download):
+def query_arxiv(search_term=params['query'], num_metadata_to_download=params['arxiv']['main']['max_metadata']):
     search = arxiv.Search(
         query=search_term,
         max_results=num_metadata_to_download,
@@ -128,8 +128,4 @@ class DateTimeEncoder(json.JSONEncoder):
         # Check for other types you need to serialize here
         return super().default(obj)
 
-# class DateTimeEncoder(json.JSONEncoder):
-#     def default(self, obj):
-#         if isinstance(obj, datetime):
-#             return obj.isoformat()
-#         return json.JSONEncoder.default(self, obj)
+
