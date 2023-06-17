@@ -89,6 +89,21 @@ class ArxivDownloadKeywordsMetadataOperator(PythonOperator):
         return serialized_results
 
 
+class ArxivDownloadKeywordsPdfFilesOperator(PythonOperator):
+    def __init__(self, *args, **kwargs):
+        super().__init__(python_callable=self.execute, *args, **kwargs)
+
+    def execute(self, context):
+        from constants import params
+        from arxiv_downloader import download_pdf_files, query_arxiv
+        keywords = context['ti'].xcom_pull(task_ids='get_keywords_task')
+        for keyword in keywords:
+            search_term = f"{keyword} AND {params['query']}"
+            print(f"Looking for files on >> {search_term}")
+            search = query_arxiv(search_term, params['arxiv']['kw']['max_metadata'])
+            download_pdf_files(search)
+
+
 class CrossrefDownloadOperator(PythonOperator):
     def __init__(self, *args, **kwargs):
         super().__init__(python_callable=self.execute, *args, **kwargs)
@@ -162,7 +177,7 @@ class DatabaseAddRecordOperator(PythonOperator):
 
 with DAG(
         default_args=default_args,
-        dag_id='v66',
+        dag_id='v69',
         description='Our first dag using python operator',
         start_date=datetime(2023, 6, 7),
         schedule='@once'
@@ -193,6 +208,9 @@ with DAG(
         task_id='arxiv_download_keywords_metadata',
         dag=dag
     )
+    arxiv_download_keywords_pdf_files_task = ArxivDownloadKeywordsPdfFilesOperator(
+        task_id='arxiv_download_keywords_pdfs_task'
+    )
     crossref_download_task = CrossrefDownloadOperator(
         task_id='crossref_download_task',
         dag=dag
@@ -214,6 +232,7 @@ with DAG(
         dag=dag
     )
 
+
     op_create_directories >> [arxiv_download_metadata_task, springer_download_metadata_task, crossref_download_task]
     springer_download_metadata_task >> get_keywords_task
     springer_download_metadata_task >> springer_download_pdfs_task
@@ -224,3 +243,4 @@ with DAG(
     arxiv_download_metadata_task >> extract_keywords_task
     arxiv_download_keywords_metadata >> database_add_record_task
     arxiv_download_metadata_task >> arxiv_download_pdf_files_task
+    arxiv_download_keywords_metadata >> arxiv_download_keywords_pdf_files_task

@@ -86,7 +86,7 @@ def query_arxiv_keywords(keywords,
                                                                      'max_metadata'],
                                                                  num_pdf_files_to_download=params['arxiv']['kw'][
                                                                      'max_pdfs'],
-                                                                 save_to_json=False)
+                                                                 save_to_json=False, download_files=False)
         all_keywords_results.append({'keyword': f'{keyword}',
                                      'arxiv': {
                                          'metadata': keyword_query_results
@@ -99,7 +99,7 @@ def query_arxiv_keywords(keywords,
 def search_and_download_arxiv_papers(query=params['query'],
                                      num_metadata_to_download=params['arxiv']['main']['max_metadata'],
                                      num_pdf_files_to_download=params['arxiv']['main']['max_pdfs'],
-                                     save_to_json=True, download_files='True'):
+                                     save_to_json=True, download_files=True):
 
     search = query_arxiv(query, num_metadata_to_download)
     metadata = generate_arxiv_metadata(search, num_metadata_to_download)
