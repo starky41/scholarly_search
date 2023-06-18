@@ -1,7 +1,11 @@
 import requests
 import json
-from paths import metadata_paths
-from constants import params
+try:
+    from application.constants.paths import metadata_paths
+    from application.constants.constants import params
+except:
+    from dags.application.constants.paths import metadata_paths
+    from dags.application.constants.constants import params
 
 RESULTS = metadata_paths['crossref']
 
@@ -13,7 +17,8 @@ def get_crossref_results(query=params['query'], max_results=params['crossref']['
         "query": query,
         "sort": "relevance",
         "order": "desc",
-        "rows": max_results  # limit of 1000 per request.
+        "rows": max_results,  # limit of 1000 per request.
+        "filter": "has-references:true"
     }
 
     try:
@@ -87,7 +92,13 @@ def get_crossref_results(query=params['query'], max_results=params['crossref']['
             # 'published_date']}\nJournal Name: {result['journal_name']}\nVolume: {result['volume']}\nIssue: {result[
             # 'issue']}\nPage: {result['page']}\nCitation Count: {result['citation_count']}\nDOI: {result[
             # 'doi']}\nURL: {result['url']}\nAbstract: {result['abstract']}\n\n")
-            f"{i + 1}/{len(results)} || Title: {result['title']} || Authors: {result['authors']}")
+            f"{i + 1}/{len(results)} "
+            f"|| Title: {result['title']} "
+            f"|| Authors: {result['authors']} "
+            f"|| Citation count: {result['citation_count']}"
+            f"|| Doi: {result['doi']}"
+            f"|| URL: {result['url']}")
+
 
     # save to json file
     with open(RESULTS, 'w', encoding='utf-8') as f:

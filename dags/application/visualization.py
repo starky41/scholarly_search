@@ -4,8 +4,11 @@ import datetime
 from collections import Counter
 from textwrap import wrap
 import textwrap
-from constants import params
 
+try:
+    from application.constants.constants import params
+except ModuleNotFoundError:
+    from dags.application.constants.constants import params
 
 
 def create_visualizations(springer_data, arxiv_data, crossref_data, query_name=params['query']):

@@ -1,11 +1,18 @@
-from paths import metadata_paths, paper_paths
 import arxiv
 import json
 from datetime import datetime
 import re
-import database
-from constants import params
 from time import sleep
+
+try:
+    from application.constants.constants import params
+    from application import database
+    from application.constants.paths import metadata_paths, paper_paths
+except ModuleNotFoundError:
+    from dags.application.constants.constants import params
+    from dags.application.database import upload_file
+    from dags.application.constants.paths import metadata_paths, paper_paths
+
 
 ARXIV_METADATA_OUTPUT = metadata_paths['arxiv']
 
@@ -72,7 +79,7 @@ def download_pdf_files(search,
                                 filename=filename)
             print(
                 f'Downloaded article [{num_files_downloaded + 1}/{num_pdf_files_to_download}]: {result.title} ({result.pdf_url})')
-            database.upload_file(f'/arxiv_papers/{filename}')
+            upload_file(f'/arxiv_papers/{filename}')
             num_files_downloaded += 1
 
 

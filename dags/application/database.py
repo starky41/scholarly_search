@@ -2,7 +2,12 @@ import datetime
 from pymongo import MongoClient
 import gridfs
 import os
-from constants import params
+
+try:
+    from application.constants.constants import params
+except ModuleNotFoundError:
+    from dags.application.constants.constants import params
+
 
 def mongo_conn():
     try:

@@ -4,11 +4,17 @@ import json
 from time import sleep
 import pandas as pd
 import os
-from database import upload_file
-from paths import paper_paths
-from apikey import API_KEY
-from constants import *
 
+try:
+    from application.database import upload_file
+    from application.constants.paths import paper_paths
+    from application.constants.apikey import API_KEY
+    from application.constants.constants import *
+except ModuleNotFoundError:
+    from dags.application.database import upload_file
+    from dags.application.constants.paths import paper_paths
+    from dags.application.constants.apikey import API_KEY
+    from dags.application.constants.constants import *
 # Constants
 START = 1
 MAX_RESULTS = 100

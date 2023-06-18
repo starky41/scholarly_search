@@ -1,9 +1,11 @@
-import numpy as np
 import json
 from datetime import datetime
 from sklearn.feature_extraction.text import TfidfVectorizer
-from arxiv_downloader import dump_to_json
 
+try:
+    from application.downloaders.arxiv_downloader import dump_to_json
+except ModuleNotFoundError:
+    from dags.application.downloaders.arxiv_downloader import dump_to_json
 
 # Custom JSON encoder that can handle datetime objects
 class CustomJSONEncoder(json.JSONEncoder):

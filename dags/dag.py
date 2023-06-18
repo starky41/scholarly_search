@@ -13,7 +13,7 @@ default_args = {
 
 
 def create_directories():
-    from paths import create_directories
+    from application.constants.paths import create_directories
     create_directories()
 
 
@@ -22,8 +22,8 @@ class SpringerDownloadMetadataOperator(PythonOperator):
         super().__init__(python_callable=self.execute, *args, **kwargs)
 
     def execute(self, context):
-        import springer_dl
-        springer_results = springer_dl.get_springer_results()
+        from application.downloaders import springer_downloader
+        springer_results = springer_downloader.get_springer_results()
         context['ti'].xcom_push(key='springer_results', value=springer_results)
         return springer_results
 
@@ -33,7 +33,7 @@ class SpringerDownloadPdfFilesOperator(PythonOperator):
         super().__init__(python_callable=self.execute, *args, **kwargs)
 
     def execute(self, context):
-        from springer_dl import download_papers
+        from application.downloaders.springer_downloader import download_papers
         springer_results = context['ti'].xcom_pull(task_ids='springer_download_metadata_task')
         download_papers(springer_results)
 
@@ -43,9 +43,9 @@ class GetKeywordsOperator(PythonOperator):
         super().__init__(python_callable=self.execute, *args, **kwargs)
 
     def execute(self, context):
-        import springer_dl
+        from application.downloaders.springer_downloader import find_keywords
         springer_results = context['ti'].xcom_pull(task_ids='springer_download_metadata_task')
-        keywords = springer_dl.find_keywords(springer_results)
+        keywords = find_keywords(springer_results)
         print(keywords)
 
         return keywords
@@ -56,7 +56,7 @@ class ArxivDownloadMetadataOperator(PythonOperator):
         super().__init__(python_callable=self.execute, *args, **kwargs)
 
     def execute(self, context):
-        from arxiv_downloader import serialize, search_and_download_arxiv_papers
+        from application.downloaders.arxiv_downloader import serialize, search_and_download_arxiv_papers
         arxiv_results = search_and_download_arxiv_papers(save_to_json=False, download_files=False)
         serialized_results = serialize(arxiv_results)
 
@@ -70,7 +70,7 @@ class ArxivDownloadPdfFilesOperator(PythonOperator):
         super().__init__(python_callable=self.execute, *args, **kwargs)
 
     def execute(self, context):
-        from arxiv_downloader import download_pdf_files, query_arxiv
+        from application.downloaders.arxiv_downloader import download_pdf_files, query_arxiv
         search = query_arxiv()
         download_pdf_files(search)
 
@@ -80,7 +80,7 @@ class ArxivDownloadKeywordsMetadataOperator(PythonOperator):
         super().__init__(python_callable=self.execute, *args, **kwargs)
 
     def execute(self, context):
-        from arxiv_downloader import query_arxiv_keywords, serialize
+        from application.downloaders.arxiv_downloader import query_arxiv_keywords, serialize
         keywords = context['ti'].xcom_pull(task_ids='get_keywords_task')
         print(keywords)
         kw_results = query_arxiv_keywords(keywords)
@@ -94,8 +94,8 @@ class ArxivDownloadKeywordsPdfFilesOperator(PythonOperator):
         super().__init__(python_callable=self.execute, *args, **kwargs)
 
     def execute(self, context):
-        from constants import params
-        from arxiv_downloader import download_pdf_files, query_arxiv
+        from application.constants.constants import params
+        from application.downloaders.arxiv_downloader import download_pdf_files, query_arxiv
         keywords = context['ti'].xcom_pull(task_ids='get_keywords_task')
         for keyword in keywords:
             search_term = f"{keyword} AND {params['query']}"
@@ -109,7 +109,7 @@ class CrossrefDownloadOperator(PythonOperator):
         super().__init__(python_callable=self.execute, *args, **kwargs)
 
     def execute(self, context):
-        from crossref_dl import get_crossref_results
+        from application.downloaders.crossref_downloader import get_crossref_results
         crossref_results = get_crossref_results()
         context['ti'].xcom_push(key='crossref_results', value=crossref_results)
         return crossref_results
@@ -120,7 +120,7 @@ class CrossrefTopResultsOperator(PythonOperator):
         super().__init__(python_callable=self.execute, *args, **kwargs)
 
     def execute(self, context):
-        from crossref_dl import get_top_articles
+        from application.downloaders.crossref_downloader import get_top_articles
         crossref_results = context['ti'].xcom_pull(task_ids='crossref_download_task')
         crossref_top_results = get_top_articles(crossref_results)
 
@@ -133,7 +133,7 @@ class CreateVisualisationsOperator(PythonOperator):
         super().__init__(python_callable=self.execute, *args, **kwargs)
 
     def execute(self, context):
-        from visualization import create_visualizations
+        from application.visualization import create_visualizations
         import json
         springer_results = context['ti'].xcom_pull(task_ids='springer_download_metadata_task')
         crossref_results = context['ti'].xcom_pull(task_ids='crossref_download_task')
@@ -149,8 +149,8 @@ class KeywordExtractionOperator(PythonOperator):
 
     def execute(self, context):
         import json
-        from kw_extraction import extract_keywords
-        from arxiv_downloader import serialize
+        from application.kw_extraction import extract_keywords
+        from application.downloaders.arxiv_downloader import serialize
         serialized_arxiv_results = context['ti'].xcom_pull(task_ids='arxiv_download_metadata_task')
         arxiv_results = json.loads(serialized_arxiv_results)
         arxiv_results_with_keywords = extract_keywords(arxiv_results)
@@ -165,7 +165,7 @@ class DatabaseAddRecordOperator(PythonOperator):
         super().__init__(python_callable=self.execute, *args, **kwargs)
 
     def execute(self, context):
-        import database
+        from application import database
         springer_results = context['ti'].xcom_pull(task_ids='springer_download_metadata_task')
         serialized_arxiv_results = context['ti'].xcom_pull(task_ids='extract_keywords_task')
         arxiv_results = json.loads(serialized_arxiv_results)
@@ -177,7 +177,7 @@ class DatabaseAddRecordOperator(PythonOperator):
 
 with DAG(
         default_args=default_args,
-        dag_id='v69',
+        dag_id='v91',
         description='Our first dag using python operator',
         start_date=datetime(2023, 6, 7),
         schedule='@once'
@@ -231,7 +231,6 @@ with DAG(
         task_id='database_add_record_task',
         dag=dag
     )
-
 
     op_create_directories >> [arxiv_download_metadata_task, springer_download_metadata_task, crossref_download_task]
     springer_download_metadata_task >> get_keywords_task
