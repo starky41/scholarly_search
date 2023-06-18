@@ -3,7 +3,7 @@ import json
 try:
     from application.constants.paths import metadata_paths
     from application.constants.constants import params
-except:
+except ModuleNotFoundError:
     from dags.application.constants.paths import metadata_paths
     from dags.application.constants.constants import params
 
