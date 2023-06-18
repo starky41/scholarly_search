@@ -1,5 +1,5 @@
 /dags/output/
-/dags/application/constants/
+/dags/application/constants/apikey.py
 /dags/output/springer_papers/
 /logs/
 /mongodb/
