@@ -6,7 +6,7 @@ from time import sleep
 
 try:
     from application.constants.constants import params
-    from application import database
+    from application.database import upload_file
     from application.constants.paths import metadata_paths, paper_paths
 except ModuleNotFoundError:
     from dags.application.constants.constants import params
