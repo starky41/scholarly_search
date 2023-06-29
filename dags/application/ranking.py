@@ -1,7 +1,12 @@
 import pandas as pd
 import re
 from nltk.stem import WordNetLemmatizer
+import nltk
+nltk.download('wordnet')
+nltk.download('omw-1.4')
 import json
+import os
+
 try:
     from application.constants import paths
     from application.database import db
@@ -9,16 +14,19 @@ except ModuleNotFoundError:
     from dags.application.constants import paths
     from dags.application.database import db
 
-scimago_path = paths.SCIMAGO_PATH
+# Get the absolute path to the scimagojr.csv file
+constants_dir = os.path.join(os.path.dirname(__file__), 'constants')
+scimago_path = os.path.join(constants_dir, 'scimagojr.csv')
+
 df_scimago = pd.read_csv(scimago_path, delimiter=';')
 lemmatizer = WordNetLemmatizer()
 
 metadata_collection = db["metadata"]
 data_list = []
 
-def get_top_papers():
-    with open('output/metadata/crossref.json') as file:
-        crossref_data = json.load(file)
+def get_top_papers(crossref_data):
+    # with open('output/metadata/crossref.json') as file:
+    #     crossref_data = json.load(file)
 
     df = get_data_from_database(crossref_data)
     merged_df = preprocess(df)
@@ -36,14 +44,20 @@ def get_data_from_database(crossref_data):
         authors = [f"{a.get('family', '')} {a.get('given', '')}".strip() for a in crossref_obj.get("authors", [])]
         title = crossref_obj.get("title", [''])[0]
         doi = crossref_obj.get("doi", "")
-        year = pd.NA if (year := crossref_obj.get("published_date", {})) == 'N/A' else year
-        publisher = pd.NA if (publisher := crossref_obj.get("publisher", "")) == 'N/A' else publisher
-        journal_name = pd.NA if (journal_name := crossref_obj.get("journal_name", "")) == 'N/A' else journal_name
+        year = crossref_obj.get("published_date", {})
+        year = pd.NA if year == 'N/A' else year
+        publisher = crossref_obj.get("publisher", "")
+        publisher = pd.NA if publisher == 'N/A' else publisher
+
+        journal_name = crossref_obj.get("journal_name", "")
+        journal_name = pd.NA if journal_name == 'N/A' else journal_name
+
+
         volume = crossref_obj.get("volume", None)
         issue = crossref_obj.get("issue", None)
         page = crossref_obj.get("page", None)
-        citation_count = pd.NA if (citation_count := crossref_obj.get("citation_count",
-                                                                      None)) == 'N/A' else citation_count
+        citation_count = crossref_obj.get("citation_count", None)
+        citation_count = pd.NA if citation_count == 'N/A' else citation_count
         issn = ", ".join(crossref_obj.get("ISSN", []))
         url = crossref_obj.get("URL", "")
         abstract = pd.NA if crossref_obj.get('abstract', '') == 'N/A' else crossref_obj.get('abstract', '')
@@ -234,17 +248,19 @@ def get_results(df, ranked_df):
     # Remove '\' from DOI fields
     common_records.loc[:, 'doi'] = common_records['doi'].str.replace('\\', '')
 
-    # Convert DataFrame to a list of dictionaries
-    records = common_records.to_dict(orient='records')
+    # Serialize the DataFrame to a JSON string
+    serialized_metadata = common_records.to_json(orient='records')
 
-    # Save records to a JSON file
-    with open('my_json_file.json', 'w') as file:
-        json.dump(records, file)
-
-    # print(records)
+    # Convert JSON string to a list of dictionaries
+    records = json.loads(serialized_metadata)
 
     return records
 
 
-
-get_top_papers()
+class DateTimeEncoder(json.JSONEncoder):
+    def default(self, obj):
+        if pd.isna(obj):
+            return None
+        if isinstance(obj, pd.Timestamp):
+            return obj.isoformat()
+        return super().default(obj)

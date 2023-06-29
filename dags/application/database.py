@@ -44,7 +44,7 @@ def png_to_bson(path='./output/visualizations'):
 
 
 def add_record(springer_data, arxiv_data, crossref_data, kw_data, top_papers, query=params['query']):
-    # result = queries.delete_many({})
+    result = queries.delete_many({})
     visualizations = png_to_bson()
     db_record = {"name": query,
                  "datetime": datetime.datetime.utcnow(),

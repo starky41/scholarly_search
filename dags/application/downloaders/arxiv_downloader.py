@@ -141,4 +141,11 @@ class DateTimeEncoder(json.JSONEncoder):
         # Check for other types you need to serialize here
         return super().default(obj)
 
+# class DateTimeEncoder(json.JSONEncoder):
+#     def default(self, obj):
+#         if obj is None:
+#             return None
+#         if isinstance(obj, datetime.datetime):
+#             return obj.isoformat()
+#         return super().default(obj)
 

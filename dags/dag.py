@@ -159,6 +159,18 @@ class KeywordExtractionOperator(PythonOperator):
         return arxiv_results_with_keywords
 
 
+class RankPapersOperator(PythonOperator):
+    def __init__(self, *args, **kwargs):
+        super().__init__(python_callable=self.execute, *args, **kwargs)
+
+    def execute(self, context):
+        from application.ranking import get_top_papers
+        crossref_results = context['ti'].xcom_pull(task_ids='crossref_download_task')
+        ranked_papers = get_top_papers(crossref_results)
+        context['ti'].xcom_push(key='ranked_papers', value=ranked_papers)
+        return ranked_papers
+
+
 class DatabaseAddRecordOperator(PythonOperator):
 
     def __init__(self, *args, **kwargs):
@@ -170,14 +182,15 @@ class DatabaseAddRecordOperator(PythonOperator):
         serialized_arxiv_results = context['ti'].xcom_pull(task_ids='extract_keywords_task')
         arxiv_results = json.loads(serialized_arxiv_results)
         crossref_results = context['ti'].xcom_pull(task_ids='crossref_download_task')
+        ranked_papers = context['ti'].xcom_pull(task_ids='rank_papers_task')
         serialized_kw_data = context['ti'].xcom_pull(task_ids='arxiv_download_keywords_metadata')
         kw_data = json.loads(serialized_kw_data)
-        database.add_record(springer_results, arxiv_results, crossref_results, kw_data)
+        database.add_record(springer_results, arxiv_results, crossref_results, kw_data, ranked_papers)
 
 
 with DAG(
         default_args=default_args,
-        dag_id='v120',
+        dag_id='v138',
         description='Our first dag using python operator',
         start_date=datetime(2023, 6, 7),
         schedule='@once'
@@ -227,6 +240,10 @@ with DAG(
         task_id='extract_keywords_task',
         dag=dag
     )
+    rank_papers_task = RankPapersOperator(
+        task_id='rank_papers_task',
+        dag=dag
+    )
     database_add_record_task = DatabaseAddRecordOperator(
         task_id='database_add_record_task',
         dag=dag
@@ -238,8 +255,10 @@ with DAG(
     get_keywords_task >> arxiv_download_keywords_metadata
     [arxiv_download_metadata_task, springer_download_metadata_task] >> arxiv_download_keywords_metadata
     crossref_download_task >> crossref_get_top_results_task
-    [arxiv_download_metadata_task, crossref_download_task, springer_download_metadata_task] >> create_visualizations_task
+    [arxiv_download_metadata_task, crossref_download_task,
+     springer_download_metadata_task] >> create_visualizations_task
     arxiv_download_metadata_task >> extract_keywords_task
-    arxiv_download_keywords_metadata >> database_add_record_task
+    arxiv_download_keywords_metadata >> rank_papers_task
+    rank_papers_task >> database_add_record_task
     arxiv_download_metadata_task >> arxiv_download_pdf_files_task
     arxiv_download_keywords_metadata >> arxiv_download_keywords_pdf_files_task
