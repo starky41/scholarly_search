@@ -3,7 +3,7 @@ from pathlib import Path
 OUTPUT = './output'
 METADATA_OUTPUT = f'{OUTPUT}/metadata'
 API_KEY = './data'
-
+SCIMAGO_PATH = './constants/scimagojr.csv'
 
 def create_directories():
     directories = ['metadata', 'visualizations', 'arxiv_papers', 'springer_papers']

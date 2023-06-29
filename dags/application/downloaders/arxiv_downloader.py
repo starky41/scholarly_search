@@ -4,6 +4,7 @@ from datetime import datetime
 import re
 from time import sleep
 
+
 try:
     from application.constants.constants import params
     from application.database import upload_file
@@ -29,32 +30,34 @@ def query_arxiv(search_term=params['query'], num_metadata_to_download=params['ar
 
 def generate_arxiv_metadata(search, num_metadata_to_download):
     results = list()
+    try:
+        for result in search.results():
+            data = {
+                'id': result.entry_id,
+                'updated': result.updated,
+                'published': result.published,
+                'title': result.title,
+                'authors': [author.name for author in result.authors],
+                'summary': result.summary,
+                'primary_category': result.primary_category,
+                'categories': result.categories,
+                'links': [{'title': link.title,
+                           'href': link.href,
+                           'rel': link.rel,
+                           'content_type': link.content_type}
+                          for link in result.links],
+                'pdf_url': result.pdf_url,
+            }
 
-    for result in search.results():
-        data = {
-            'id': result.entry_id,
-            'updated': result.updated,
-            'published': result.published,
-            'title': result.title,
-            'authors': [author.name for author in result.authors],
-            'summary': result.summary,
-            'primary_category': result.primary_category,
-            'categories': result.categories,
-            'links': [{'title': link.title,
-                       'href': link.href,
-                       'rel': link.rel,
-                       'content_type': link.content_type}
-                      for link in result.links],
-            'pdf_url': result.pdf_url,
-        }
-
-        results.append(data)
-        print(
-            f"{len(results)}/{num_metadata_to_download} "
-            f" Title: {data['title']} "
-            f" Authors: {data['authors']} "
-            f"|| ID: {data['id']}"
-        )
+            results.append(data)
+            print(
+                f"{len(results)}/{num_metadata_to_download} "
+                f" Title: {data['title']} "
+                f" Authors: {data['authors']} "
+                f"|| ID: {data['id']}"
+            )
+    except arxiv.arxiv.UnexpectedEmptyPageError:
+        print('ERROR: UnexpectedEmptyPageError')
 
     return results
 
@@ -109,7 +112,10 @@ def search_and_download_arxiv_papers(query=params['query'],
                                      save_to_json=True, download_files=True):
 
     search = query_arxiv(query, num_metadata_to_download)
+
+
     metadata = generate_arxiv_metadata(search, num_metadata_to_download)
+
 
     if save_to_json:
         dump_to_json(metadata)

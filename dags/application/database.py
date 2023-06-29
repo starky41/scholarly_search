@@ -12,7 +12,7 @@ except ModuleNotFoundError:
 def mongo_conn():
     try:
         # cluster = 'mongodb+srv://starky:xe97u5wDMS2kcZry@cluster0.jfbfflp.mongodb.net/scholarly_search_db?retryWrites=true&w=majority'
-        cluster = 'mongodb://192.168.0.119:27017/'
+        cluster = 'mongodb://192.168.1.92:27017/'
         client = MongoClient(cluster)
         print(f'Databases: {client.list_database_names()}')
         print(f'Collections: {client.scholarly_search_db.list_collection_names()}')
@@ -43,8 +43,8 @@ def png_to_bson(path='./output/visualizations'):
     return documents
 
 
-def add_record(springer_data, arxiv_data, crossref_data, kw_data, query=params['query']):
-    result = queries.delete_many({})
+def add_record(springer_data, arxiv_data, crossref_data, kw_data, top_papers, query=params['query']):
+    # result = queries.delete_many({})
     visualizations = png_to_bson()
     db_record = {"name": query,
                  "datetime": datetime.datetime.utcnow(),
@@ -57,7 +57,8 @@ def add_record(springer_data, arxiv_data, crossref_data, kw_data, query=params['
                                     },
 
                           'keywords': kw_data,
-                          'visualizations': visualizations
+                          'visualizations': visualizations,
+                          'top_papers': top_papers
                           }
                  }
 

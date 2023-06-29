@@ -1,16 +1,16 @@
 from .paths import metadata_paths
 
 params = {
-    'query': 'Parallel computing',
+    'query': 'Machine learning in spam detection',
     'springer': {
-        'max_metadata': 100,
-        'max_pdfs': 2,
-        'num_kw': 3,
+        'max_metadata': 300,
+        'max_pdfs': 1,
+        'num_kw': 2,
         'path': metadata_paths['springer'],
     },
     'arxiv': {
-        'main': {'max_metadata': 100, 'max_pdfs': 2},
-        'kw': {'max_metadata': 100, 'max_pdfs': 2},
+        'main': {'max_metadata': 200, 'max_pdfs': 0},
+        'kw': {'max_metadata': 100, 'max_pdfs': 0},
         'path': metadata_paths['arxiv'],
     },
     'crossref': {

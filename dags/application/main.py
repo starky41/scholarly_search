@@ -1,7 +1,8 @@
 from visualization import create_visualizations
 from constants.paths import create_directories
 from kw_extraction import extract_keywords
-import database
+from database import add_record
+from ranking import get_top_papers
 
 from downloaders.arxiv_downloader import search_and_download_arxiv_papers, query_arxiv_keywords
 from downloaders.springer_downloader import get_springer_results, find_keywords
@@ -23,11 +24,14 @@ def main():
     create_visualizations(springer_results, arxiv_results, crossref_results)
 
     arxiv_results = extract_keywords(arxiv_results)
+    top_papers = get_top_papers()
 
-    database.add_record(springer_data=springer_results,
+    add_record(springer_data=springer_results,
                         arxiv_data=arxiv_results,
                         crossref_data=crossref_results,
-                        kw_data=kw_results)
+                        kw_data=kw_results,
+                        top_papers=top_papers
+                        )
 
 
 if __name__ == '__main__':
