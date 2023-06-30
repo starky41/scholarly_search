@@ -37,7 +37,7 @@ def create_wordcloud(springer_data):
     fig, ax = plt.subplots(figsize=(12, 6))
     plt.imshow(wordcloud, interpolation='bilinear')
     plt.axis('off')
-    plt.title('Most Frequent Keywords')
+    plt.title('Most Frequent Keywords\nSource: Springer Nature')
     fig.savefig('./output/visualizations/wordcloud.png')
     plt.show()
 
@@ -47,7 +47,7 @@ def plot_articles_by_year(arxiv_data, query_name):
     try:
         years = [datetime.datetime.strptime(str(result['published']), '%Y-%m-%d %H:%M:%S%z').year for result in
                  arxiv_data]
-    except:
+    except ValueError:
         years = [datetime.datetime.strptime(str(result['published']), '%Y-%m-%dT%H:%M:%S%z').year for result in
                  arxiv_data]
 
@@ -64,7 +64,7 @@ def plot_articles_by_year(arxiv_data, query_name):
 
     # add additional information
     ax.text(0.02, 0.95,
-            f"Query: {query_name}\nSelection size: {selection_size}\nCreated on: {datetime.datetime.now().strftime('%Y-%m-%d %H:%M:%S')}",
+            f"Query: {query_name}\nSource: arXiv\nSelection size: {selection_size}\nCreated on: {datetime.datetime.now().strftime('%Y-%m-%d %H:%M:%S')}",
             transform=ax.transAxes, fontsize=10, verticalalignment='top',
             bbox=dict(facecolor='white', alpha=0.5))
 
@@ -73,8 +73,6 @@ def plot_articles_by_year(arxiv_data, query_name):
 
     # show the plot
     plt.show()
-
-
 
 
 def visualize_openaccess_ratio(springer_data):
@@ -93,16 +91,18 @@ def visualize_openaccess_ratio(springer_data):
     pct_false = num_false / len(springer_data) * 100
 
     # Create a pie chart to visualize the ratio
-    labels = [f"Open Access True ({num_true})", f"Open Access False ({num_false})"]
+    labels = [f"Open Access ({num_true})", f"Not Open Access ({num_false})"]
     sizes = [num_true, num_false]
     colors = ['#1f77b4', '#ff7f0e']
 
     plt.pie(sizes, labels=labels, colors=colors, autopct='%1.1f%%')
-    plt.title('Ratio of Open Access True and False Papers')
+    plt.title('Ratio of Open Access Papers in Dataset\nSource: Springer Nature', fontweight='bold', fontsize=14)
     plt.axis('equal')
 
-    fig = plt.gcf()
-    fig.savefig('./output/visualizations/openaccess_ratio.png')
+    # Save the plot with a more descriptive name
+    plt.savefig('./output/visualizations/openaccess_ratio.png')
+
+    # Show the plot
     plt.show()
 
 
@@ -123,7 +123,7 @@ def scatter_plot_citations(crossref_data):
 
     fig, ax = plt.subplots()
     ax.scatter(years, citations)
-    ax.set_title("Publication Year vs. Citation count")
+    ax.set_title("Source: Crossref\nPublication Year vs. Citation count")
     ax.set_xlabel('Publication Year')
     ax.set_ylabel('Citation Count')
     fig.savefig('./output/visualizations/scatter_plot_citations.png')
@@ -160,7 +160,7 @@ def plot_subjects(springer_data, query_name, n=10):
     plt.rcParams.update({'font.size': 12})
     plt.tight_layout()
     plt.text(0.55, 0.125,
-             f"Query: {query_name}\nSelection size: {selection_size}\nCreated on: {datetime.datetime.now().strftime('%Y-%m-%d %H:%M:%S')}",
+             f"Query: {query_name}\nSource: Springer Nature\nSelection size: {selection_size}\nCreated on: {datetime.datetime.now().strftime('%Y-%m-%d %H:%M:%S')}",
              transform=ax.transAxes, fontsize=10, verticalalignment='top',
              bbox=dict(facecolor='white', alpha=0.5))
     fig.savefig('./output/visualizations/subjects.png')
@@ -193,7 +193,7 @@ def plot_publishers(crossref_data, query_name, n=10):
 
     # Display additional information on the plot
     plt.text(0.55, 0.125,
-             f"Query: {query_name}\nSelection size: {selection_size}\nCreated on: {datetime.datetime.now().strftime('%Y-%m-%d %H:%M:%S')}",
+             f"Query: {query_name}\nSource: Crossref\nSelection size: {selection_size}\nCreated on: {datetime.datetime.now().strftime('%Y-%m-%d %H:%M:%S')}",
              transform=plt.gca().transAxes, fontsize=10, verticalalignment='top',
              bbox=dict(facecolor='white', alpha=0.5))
     fig.savefig('./output/visualizations/publishers.png')
@@ -226,7 +226,7 @@ def plot_journals(crossref_data, query_name, n=10):
 
     # Display additional information on the plot
     plt.text(0.45, 0.125,
-             f"Query: {query_name}\nSelection size: {selection_size}\nCreated on: {datetime.datetime.now().strftime('%Y-%m-%d %H:%M:%S')}",
+             f"Query: {query_name}\nSource: Crossref\nSelection size: {selection_size}\nCreated on: {datetime.datetime.now().strftime('%Y-%m-%d %H:%M:%S')}",
              transform=plt.gca().transAxes, fontsize=10, verticalalignment='top',
              bbox=dict(facecolor='white', alpha=0.5))
     fig.savefig('./output/visualizations/journals.png')
