@@ -8,6 +8,7 @@ from downloaders.arxiv_downloader import search_and_download_arxiv_papers, query
 from downloaders.springer_downloader import get_springer_results, find_keywords
 from downloaders.crossref_downloader import get_crossref_results, get_top_articles
 
+
 def main():
     create_directories()
 
@@ -27,11 +28,11 @@ def main():
     top_papers = get_top_papers(crossref_results)
 
     add_record(springer_data=springer_results,
-                        arxiv_data=arxiv_results,
-                        crossref_data=crossref_results,
-                        kw_data=kw_results,
-                        top_papers=top_papers
-                        )
+               arxiv_data=arxiv_results,
+               crossref_data=crossref_results,
+               kw_data=kw_results,
+               top_papers=top_papers
+               )
 
 
 if __name__ == '__main__':

@@ -21,7 +21,7 @@ def create_visualizations(springer_data, arxiv_data, crossref_data, query_name=p
     plot_journals(crossref_data, query_name)
 
 
-def create_wordcloud(springer_data):
+def create_wordcloud(springer_data, query=params['query']):
     # create a list of all the keywords
     all_keywords = [keyword for file in springer_data if 'keyword' in file for keyword in file['keyword']]
 
@@ -32,13 +32,18 @@ def create_wordcloud(springer_data):
     wordcloud = WordCloud(width=800, height=400, background_color='white').generate(all_keywords_str)
 
     # plot the word cloud
-
-    # plt.figure(figsize=(12, 6))
     fig, ax = plt.subplots(figsize=(12, 6))
     plt.imshow(wordcloud, interpolation='bilinear')
     plt.axis('off')
-    plt.title('Most Frequent Keywords\nSource: Springer Nature')
-    fig.savefig('./output/visualizations/wordcloud.png')
+
+    # Add 'Most Frequent Keywords' title
+    plt.text(0.5, 1.05, 'Most Frequent Keywords', fontsize=14, fontweight='bold', transform=ax.transAxes, ha='center')
+
+    # Additional information text box
+    info_text = f"Query: {query}\nSource: Springer Nature\nSelection Size: {len(springer_data)}"
+    plt.text(0.5, -0.15, info_text, fontsize=10, transform=ax.transAxes, ha='center')
+
+    plt.savefig('./output/visualizations/wordcloud.png')
     plt.show()
 
 
@@ -106,15 +111,16 @@ def visualize_openaccess_ratio(springer_data):
     plt.show()
 
 
-def scatter_plot_citations(crossref_data):
+def scatter_plot_citations(crossref_data, min_year=1950):
     years = []
     citations = []
     for item in crossref_data:
         year = item['published_date']
         citation = item['citation_count']
         if year != "N/A" and citation != "N/A":
-            years.append(year)
-            citations.append(citation)
+            if int(year) >= min_year:  # Filter out points with a year before the threshold
+                years.append(year)
+                citations.append(citation)
 
     # Check if both lists have values to plot
     if len(years) == 0 or len(citations) == 0:
@@ -128,7 +134,6 @@ def scatter_plot_citations(crossref_data):
     ax.set_ylabel('Citation Count')
     fig.savefig('./output/visualizations/scatter_plot_citations.png')
     plt.show()
-
 
 def plot_subjects(springer_data, query_name, n=10):
     selection_size = len(springer_data)
@@ -149,20 +154,23 @@ def plot_subjects(springer_data, query_name, n=10):
 
     # Wrap the subject labels
     max_label_len = max([len(label) for label in labels])
-    wrapped_labels = [('\n'.join(textwrap.wrap(label, width=max_label_len // 2))) for label in labels]
+    wrapped_labels = ['\n'.join(wrap(label, width=max_label_len // 2)) for label in labels]
 
     fig, ax = plt.subplots(figsize=(8, 6))
-    ax.barh(wrapped_labels, values)
+    ax.barh(range(len(wrapped_labels)), values)
+    ax.set_yticks(range(len(wrapped_labels)))
+    ax.set_yticklabels(wrapped_labels)
+    ax.tick_params(axis='both', which='major', labelsize=8)
     ax.set_xlabel('Number of chapters')
     ax.set_title(f'Top {n} Subjects in Papers')
 
     # Adjust font size and figure size to prevent overlap
     plt.rcParams.update({'font.size': 12})
     plt.tight_layout()
-    plt.text(0.55, 0.125,
+    plt.text(0.95, 0.05,
              f"Query: {query_name}\nSource: Springer Nature\nSelection size: {selection_size}\nCreated on: {datetime.datetime.now().strftime('%Y-%m-%d %H:%M:%S')}",
-             transform=ax.transAxes, fontsize=10, verticalalignment='top',
-             bbox=dict(facecolor='white', alpha=0.5))
+             transform=ax.transAxes, fontsize=10, verticalalignment='bottom',
+             bbox=dict(facecolor='white', alpha=0.5), ha='right')
     fig.savefig('./output/visualizations/subjects.png')
     plt.show()
 
@@ -179,10 +187,12 @@ def plot_publishers(crossref_data, query_name, n=10):
 
     # Wrap the publisher labels
     max_label_len = max([len(label) for label in labels])
-    wrapped_labels = [('\n'.join(wrap(label, width=max_label_len // 2))) for label in labels]
+    wrapped_labels = ['\n'.join(wrap(label, width=max_label_len // 2)) for label in labels]
 
     fig, ax = plt.subplots(figsize=(8, 6))
-    ax.barh(wrapped_labels, values)
+    ax.barh(range(len(wrapped_labels)), values)
+    ax.set_yticks(range(len(wrapped_labels)))
+    ax.set_yticklabels(wrapped_labels)
     ax.tick_params(axis='both', which='major', labelsize=8)
     ax.set_xlabel('Number of publications')
     ax.set_title(f'Top {n} Publishers')
@@ -192,10 +202,10 @@ def plot_publishers(crossref_data, query_name, n=10):
     plt.tight_layout()
 
     # Display additional information on the plot
-    plt.text(0.55, 0.125,
+    plt.text(0.95, 0.05,
              f"Query: {query_name}\nSource: Crossref\nSelection size: {selection_size}\nCreated on: {datetime.datetime.now().strftime('%Y-%m-%d %H:%M:%S')}",
-             transform=plt.gca().transAxes, fontsize=10, verticalalignment='top',
-             bbox=dict(facecolor='white', alpha=0.5))
+             transform=ax.transAxes, fontsize=10, verticalalignment='bottom',
+             bbox=dict(facecolor='white', alpha=0.5), ha='right')
     fig.savefig('./output/visualizations/publishers.png')
     plt.show()
 
@@ -212,10 +222,12 @@ def plot_journals(crossref_data, query_name, n=10):
 
     # Wrap the journal labels
     max_label_len = max([len(label) for label in labels])
-    wrapped_labels = [('\n'.join(wrap(label, width=max_label_len // 2))) for label in labels]
+    wrapped_labels = ['\n'.join(wrap(label, width=max_label_len // 2)) for label in labels]
 
     fig, ax = plt.subplots(figsize=(8, 6))
-    ax.barh(wrapped_labels, values)
+    ax.barh(range(len(wrapped_labels)), values)
+    ax.set_yticks(range(len(wrapped_labels)))
+    ax.set_yticklabels(wrapped_labels)
     ax.tick_params(axis='both', which='major', labelsize=8)
     ax.set_xlabel('Number of publications')
     ax.set_title(f'Top {n} Journals')
@@ -225,9 +237,9 @@ def plot_journals(crossref_data, query_name, n=10):
     plt.tight_layout()
 
     # Display additional information on the plot
-    plt.text(0.45, 0.125,
+    plt.text(0.95, 0.05,
              f"Query: {query_name}\nSource: Crossref\nSelection size: {selection_size}\nCreated on: {datetime.datetime.now().strftime('%Y-%m-%d %H:%M:%S')}",
-             transform=plt.gca().transAxes, fontsize=10, verticalalignment='top',
-             bbox=dict(facecolor='white', alpha=0.5))
+             transform=ax.transAxes, fontsize=10, verticalalignment='bottom',
+             bbox=dict(facecolor='white', alpha=0.5), ha='right')
     fig.savefig('./output/visualizations/journals.png')
     plt.show()
